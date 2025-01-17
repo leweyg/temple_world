@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Temple World</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="three/build/main.css">
+	</head>
+
+	<body>
+		<div id="info">
+			<a href="https://lewcid.com/" target="_blank" rel="noopener">
+                lewcid.com</a> - Temple World
+		</div>
+
+		<script src="content/code/core/temple_world.js"></script>
+		<script src="content/code/render/string3.js"></script>
+		<script src="content/code/render/temple_three.js"></script>
+
+		<script type="importmap">
+			{
+				"imports": { 
+					"three": "./three/build/three.module.js"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { OrbitControls } from './three/build/OrbitControls.js';
+
+			let renderer, scene, camera, cubeCamera;
+
+			let lightProbe;
+
+			init_three();
+
+            function request_redraw() {
+                render();
+            }
+
+            function init_lewdo() {
+
+                // App instance
+                var mainApp = temple_world_create_app();
+
+                //mainApp.app_out.copy( string3( example_string3_json ) );
+
+                // Connect to web page UI:
+                string3_three.setupThree( THREE, request_redraw )
+                string3_three.setMainApp( scene, mainApp );
+
+            }
+
+			function init_three() {
+
+				// renderer
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				// scene
+				scene = new THREE.Scene();
+
+				// camera
+				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
+				camera.position.set( 0, 0, 7 );
+
+				const cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 256 );
+
+				cubeCamera = new THREE.CubeCamera( 1, 1000, cubeRenderTarget );
+
+				// controls
+				const controls = new OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render );
+				controls.minDistance =  2.5;
+				controls.maxDistance = 12.5;
+				controls.enablePan = false;
+
+				// probe
+				lightProbe = new THREE.LightProbe();
+				scene.add( lightProbe );
+
+                if (false) {
+                    const loader = new THREE.TextureLoader()
+                    const texture = loader.load( 'content/images/lewdo.png', () => { request_redraw(); } )
+				    texture.colorSpace = THREE.SRGBColorSpace;
+
+                    const geometry = new THREE.BoxGeometry();
+                    const material = new THREE.MeshBasicMaterial( { map: texture } );
+                    const mesh = new THREE.Mesh( geometry, material );
+                    scene.add( mesh );
+                }
+
+                init_lewdo();
+
+				// listener
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				render();
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>
