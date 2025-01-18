@@ -24,14 +24,13 @@
 			}
 		</script>
 
-		<script type="module" src="content/spaces/space_directions.js"></script>
-
 		<script type="module">
 
 			import * as THREE from 'three';
 
 			import { OrbitControls } from './three/build/OrbitControls.js';
 			import { TempleSpaceDirectionsBuilder } from './content/spaces/space_directions.js'
+			import { TempleAvatar } from './content/avatar/temple_avatar.js'
 
 			let renderer, scene, camera, cubeCamera;
 
@@ -59,6 +58,9 @@
 			function init_temple() {
 				var first = new TempleSpaceDirectionsBuilder(scene);
 				console.assert(first);
+
+				var avatar = new TempleAvatar(scene);
+				console.assert(avatar);
 			}
 
 			function init_three() {
