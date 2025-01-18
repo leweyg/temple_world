@@ -27,17 +27,20 @@
 			import { OrbitControls } from './three/build/OrbitControls.js';
 			import { TempleWorld } from './content/temple_world.js'
 
-			let renderer, scene, camera, cubeCamera;
+			let renderer, scene, camera;
 			var templeWorldInst = null;
+			var isRedrawing = false;
+			var isRedrawRequested = false;
 
 			init_three();
 
             function request_redraw() {
+				isRedrawRequested = true;
                 render();
             }
 
 			function init_temple() {
-				templeWorldInst = new TempleWorld(scene);
+				templeWorldInst = new TempleWorld(scene, request_redraw);
 			}
 
 			function init_three() {
@@ -55,13 +58,9 @@
 				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
 				camera.position.set( 0, 0, 7 );
 
-				const cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 256 );
-
-				cubeCamera = new THREE.CubeCamera( 1, 1000, cubeRenderTarget );
-
 				// controls
 				const controls = new OrbitControls( camera, renderer.domElement );
-				controls.addEventListener( 'change', render );
+				controls.addEventListener( 'change', request_redraw );
 				controls.minDistance =  2.5;
 				controls.maxDistance = 12.5;
 				controls.enablePan = false;
@@ -98,8 +97,17 @@
 			}
 
 			function render() {
-
-				renderer.render( scene, camera );
+				if (isRedrawing) return false;
+				isRedrawing = true;
+				try {
+					renderer.render( scene, camera );
+					isRedrawing = false;
+				} catch (ex) {
+					isRedrawing = false;
+					isRedrawRequested = false;
+					console.warn("Rendering exception: " + ex);
+					throw ex;
+				}
 
 			}
 
