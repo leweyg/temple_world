@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { TempleAvatar } from './avatar/temple_avatar.js'
 import { TempleSpaceDirectionsBuilder } from './spaces/space_directions.js'
+import { TempleLights } from './spaces/space_lights.js'
 
 class TempleWorld {
 
@@ -11,6 +12,7 @@ class TempleWorld {
         parentScene.add(this.worldScene);
         this.environment = new TempleSpaceDirectionsBuilder(this.worldScene);
         this.avatar = new TempleAvatar(this.worldScene);
+        this.lights = new TempleLights(this.worldScene);
     }
 
 
