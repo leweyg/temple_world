@@ -12,9 +12,6 @@
 			Temple World
 		</div>
 
-		<script src="content/code/render/string3.js"></script>
-		<script src="content/code/render/temple_three.js"></script>
-
 		<script type="importmap">
 			{
 				"imports": { 
@@ -49,8 +46,8 @@
                 //mainApp.app_out.copy( string3( example_string3_json ) );
 
                 // Connect to web page UI:
-                string3_three.setupThree( THREE, request_redraw )
-                string3_three.setMainApp( scene, mainApp );
+                //string3_three.setupThree( THREE, request_redraw )
+                //string3_three.setMainApp( scene, mainApp );
 
             }
 
@@ -101,10 +98,10 @@
 
 				init_temple();
 
-                init_lewdo();
-
 				// listener
 				window.addEventListener( 'resize', onWindowResize );
+
+				request_redraw();
 
 			}
 
