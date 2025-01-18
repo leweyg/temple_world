@@ -25,7 +25,7 @@
 			import * as THREE from 'three';
 
 			import { OrbitControls } from './three/build/OrbitControls.js';
-			import { TempleWorld } from './temple_world.js'
+			import { TempleWorld } from './content/temple_world.js'
 
 			let renderer, scene, camera, cubeCamera;
 			var templeWorldInst = null;
@@ -36,19 +36,6 @@
 
             function request_redraw() {
                 render();
-            }
-
-            function init_lewdo() {
-
-                // App instance
-                var mainApp = templeWorldInst;
-
-                //mainApp.app_out.copy( string3( example_string3_json ) );
-
-                // Connect to web page UI:
-                //string3_three.setupThree( THREE, request_redraw )
-                //string3_three.setMainApp( scene, mainApp );
-
             }
 
 			function init_temple() {
