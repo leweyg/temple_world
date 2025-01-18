@@ -30,8 +30,6 @@
 			let renderer, scene, camera, cubeCamera;
 			var templeWorldInst = null;
 
-			let lightProbe;
-
 			init_three();
 
             function request_redraw() {
@@ -67,10 +65,6 @@
 				controls.minDistance =  2.5;
 				controls.maxDistance = 12.5;
 				controls.enablePan = false;
-
-				// probe
-				lightProbe = new THREE.LightProbe();
-				scene.add( lightProbe );
 
                 if (false) {
                     const loader = new THREE.TextureLoader()
