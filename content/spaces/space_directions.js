@@ -4,6 +4,10 @@ import * as THREE from 'three';
 class TempleSpaceDirectionsBuilder {
 
     constructor(parentScene) {
+        this.scene = new THREE.Group();
+        this.scene.name = "TempleSpaceDirections"
+        parentScene.add(this.scene);
+
         const material = new THREE.LineBasicMaterial( { color: 0xccFFcc } );
 
         const points = [];
@@ -12,9 +16,8 @@ class TempleSpaceDirectionsBuilder {
 
         const geometry = new THREE.BufferGeometry().setFromPoints( points );
 
-        const line = new THREE.Line( geometry, material );
-
-        parentScene.add( line );
+        this.lines = new THREE.Line( geometry, material );
+        this.scene.add( this.lines );
     }
 
     addDirectionLines(points, radius = 1.0) {
