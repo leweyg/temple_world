@@ -12,7 +12,6 @@
 			Temple World
 		</div>
 
-		<script src="content/code/core/temple_world.js"></script>
 		<script src="content/code/render/string3.js"></script>
 		<script src="content/code/render/temple_three.js"></script>
 
@@ -29,10 +28,10 @@
 			import * as THREE from 'three';
 
 			import { OrbitControls } from './three/build/OrbitControls.js';
-			import { TempleSpaceDirectionsBuilder } from './content/spaces/space_directions.js'
-			import { TempleAvatar } from './content/avatar/temple_avatar.js'
+			import { TempleWorld } from './temple_world.js'
 
 			let renderer, scene, camera, cubeCamera;
+			var templeWorldInst = null;
 
 			let lightProbe;
 
@@ -45,7 +44,7 @@
             function init_lewdo() {
 
                 // App instance
-                var mainApp = temple_world_create_app();
+                var mainApp = templeWorldInst;
 
                 //mainApp.app_out.copy( string3( example_string3_json ) );
 
@@ -56,11 +55,7 @@
             }
 
 			function init_temple() {
-				var first = new TempleSpaceDirectionsBuilder(scene);
-				console.assert(first);
-
-				var avatar = new TempleAvatar(scene);
-				console.assert(avatar);
+				templeWorldInst = new TempleWorld(scene);
 			}
 
 			function init_three() {
