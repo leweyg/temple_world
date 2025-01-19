@@ -2,11 +2,16 @@
 import * as THREE from 'three';
 import { CachedAlloc } from '../code/cachealloc.js'
 
-class ControllerMode {
+class ControllerPhase {
     None = "None";
     Hold = "Hold";
     Tap = "Tap";
     LongPress = "LongPress";
+    LongTap = "LongTap";
+    Across = "Across";
+};
+
+class ControllerMode {
     Move = "Move";
     Run = "Run";
     Look = "Look";
@@ -20,6 +25,7 @@ class ControllerStream {
         this.resetStream();
         this.rawInitial = new THREE.Vector3();
         this.rawCurrent = new THREE.Vector3();
+        this.rawRange = new THREE.Vector3();
         this.rawPrevious = new THREE.Vector3();
         this.rawDelta = new THREE.Vector3();
         this.unitInitial = new THREE.Vector3();
@@ -30,6 +36,7 @@ class ControllerStream {
         this.isStart = false;
         this.isEnd = false;
         this.isDown = false;
+        this.phase = ControllerPhase.None;
         this.mode = ControllerMode.None;
         this.rawLengthPath = 0;
         this.rawLengthCurrent = 0;
@@ -63,4 +70,6 @@ class ControllerGroup {
     }
 };
 
-export { ControllerGroup, ControllerStream, ControllerMode };
+export {
+    ControllerGroup, ControllerStream,
+    ControllerPhase, ControllerMode };

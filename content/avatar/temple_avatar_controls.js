@@ -12,6 +12,7 @@ class TempleAvatarControls {
         this.controlGroup.listenControllerEvent((c) => {
             _this.onControllerEvent(c);
         });
+        this.tv1 = new THREE.Vector3();
     }
 
     onControllerEvent(cntrl) {
@@ -20,8 +21,12 @@ class TempleAvatarControls {
 
         //console.log("Avatar recieved input.");
         var hand = this.avatar.body.hands[0];
-        hand.scene.position.copy(hand.initialPos);
-        hand.scene.position.add(cntrl.unitCurrent);
+        const tv1 = this.tv1;
+
+        tv1.copy(cntrl.unitCurrent);
+        tv1.multiplyScalar(0.5);
+        tv1.add(hand.initialPos);
+        hand.scene.position.copy(tv1);
 
         this.avatar.world.time.requestUpdate();
     }
