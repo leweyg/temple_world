@@ -1,13 +1,17 @@
 
 
 class CachedAlloc {
-    constructor(allocCallback) {
+    constructor(allocCallback, resetCallback) {
         this.allocCallback = allocCallback;
+        this.resetCallback = resetCallback;
         this.active = [];
         this.cached = [];
     }
     alloc() {
         var cur = this.ensureAllocStream();
+        if (this.resetCallback) {
+            this.resetCallback(cur);
+        }
         console.assert(!cur.isActive);
         cur.isActive = true;
         this.active.push(cur);

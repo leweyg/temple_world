@@ -3,19 +3,20 @@ import * as THREE from 'three';
 import { CachedAlloc } from '../code/cachealloc.js'
 
 class ControllerPhase {
-    None = "None";
-    Hold = "Hold";
-    Tap = "Tap";
-    LongPress = "LongPress";
-    LongTap = "LongTap";
-    Across = "Across";
+    static None = "None";
+    static Hold = "Hold";
+    static Tap = "Tap";
+    static LongPress = "LongPress";
+    static LongTap = "LongTap";
+    static Across = "Across";
 };
 
 class ControllerMode {
-    Move = "Move";
-    Run = "Run";
-    Look = "Look";
-    Aim = "Aim";
+    static None = "None";
+    static Move = "Move";
+    static Run = "Run";
+    static Look = "Look";
+    static Aim = "Aim";
 };
 
 class ControllerStream {
@@ -46,14 +47,18 @@ class ControllerStream {
 class ControllerGroup {
     constructor() {
         this.isControllerGroup = true;
-        this.cache = new CachedAlloc(() => new ControllerStream());
+        this.cache = new CachedAlloc(
+            () => new ControllerStream(),
+            (resetMe) => resetMe.resetStream());
         this.callbacks = [];
     }
     getActives() {
         return this.cache.active;
     }
     beginStream() {
-        return this.cache.alloc();
+        var stream = this.cache.alloc();
+        //stream.resetStream();
+        return stream;
     }
     endStream(str) {
         console.assert(str.isControllerStream);
