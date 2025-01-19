@@ -22,6 +22,8 @@ class TempleAvatarControls {
         var hand = this.avatar.body.hands[0];
         hand.scene.position.copy(hand.initialPos);
         hand.scene.position.add(cntrl.unitCurrent);
+
+        this.avatar.world.time.requestUpdate();
     }
 }
 
