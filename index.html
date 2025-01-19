@@ -26,6 +26,7 @@
 
 			import { OrbitControls } from './three/build/OrbitControls.js';
 			import { TempleWorld } from './content/temple_world.js'
+			import { ControlFromWeb } from './content/controls/control_from_web.js'
 
 			let renderer, scene, camera;
 			var templeWorldInst = null;
@@ -41,6 +42,8 @@
 
 			function init_temple() {
 				templeWorldInst = new TempleWorld(scene, camera, request_redraw);
+				var webControl = new ControlFromWeb(renderer.domElement, templeWorldInst.controlGroup );
+
 			}
 
 			function init_three() {
