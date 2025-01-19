@@ -5,7 +5,7 @@ class TempleTime {
     constructor(requestRedrawCallback) {
 
         this.requestRedrawCallback = requestRedrawCallback;
-        
+
         var _this = this;
         this.timeUsers = new CachedAlloc(() => new TimeUser(_this));
         this.realtimeUsers = new CachedAlloc(() => new RealtimeUser(_this));
@@ -13,10 +13,12 @@ class TempleTime {
         this.timeWallStarted = TempleTime.timeNowSeconds();
         this.timeWallPrevious = this.timeWallStarted;
         this.timeWallStep = 0.0;
+        this.realDt = this.timeWallStep; // real world delta-time
         
         this.timeVirtualRate = 1.0;
         this.timeVirtualStarted = 100.0; // arbitrary, non-zero for clarity
         this.timeVirtualStep = 0.0;
+        this.dt = this.timeVirtualStep; // delta-time
         this.timeVirtualCurrent = this.timeVirtualStarted;
         this.timeVirtualPrevious = this.timeVirtualStarted;
 
@@ -44,11 +46,17 @@ class TempleTime {
         var delta = cur - this.timeWallPrevious;
         this.timeWallPrevious = cur;
         this.timeWallStep = delta;
+        this.realDt = this.timeWallStep;
 
         this.timeVirtualStep = delta * this.timeVirtualRate;
         this.timeVirtualPrevious = this.timeVirtualCurrent;
         this.timeVirtualCurrent += this.timeVirtualStep;
+        this.dt = this.timeVirtualStep;
 
+        this.dispatchTime();
+    }
+
+    dispatchTime() {
         for (var i in this.realtimeUsers.active) {
             var tl = this.realtimeUsers.active[i];
             tl.callback(this);
