@@ -7,6 +7,8 @@ class ControlFromWeb {
         this.domElement = domElement;
         this.controlGroup = controlGroup;
 
+        this.unitRadiusPixels = 150.0;
+
         // mouseup, mousedown.
 		this.listenWith( 'pointerdown', this.onPointerDown );
         this.listenWith( 'pointermove', this.onPointerMove );
@@ -46,16 +48,21 @@ class ControlFromWeb {
 
     updateStreamFromPointer( stream, event, isStart=false, isEnd=false ) {
         stream.rawId = event.pointerId;
+        stream.rawPrevious.copy(stream.rawCurrent);
         stream.rawCurrent.set( event.clientX, event.clientY, 0 );
         stream.isStart = isStart;
         stream.isEnd = isEnd;
         if (isStart) {
             stream.rawInitial.copy(stream.rawCurrent);
+            stream.rawPrevious.copy(stream.rawCurrent);
             stream.rawDelta.set(0,0,0);
         } else {
             stream.rawDelta.copy(stream.rawCurrent);
-            stream.rawDelta.sub(stream.rawInitial);
+            stream.rawDelta.sub(stream.rawPrevious);
         }
+        stream.unitCurrent.copy(stream.rawCurrent);
+        stream.unitCurrent.sub(stream.rawInitial);
+        stream.unitCurrent.multiplyScalar(1.0 / this.unitRadiusPixels);
     }
 
     onPointerDown( event ) {

@@ -17,8 +17,11 @@ class TempleAvatarControls {
     onControllerEvent(cntrl) {
         // do processing here
         if ((!cntrl.isDown) && (!cntrl.isEnd)) return;
-        console.log("Avatar recieved input.");
 
+        //console.log("Avatar recieved input.");
+        var hand = this.avatar.body.hands[0];
+        hand.scene.position.copy(hand.initialPos);
+        hand.scene.position.add(cntrl.unitCurrent);
     }
 }
 

@@ -20,6 +20,7 @@ class ControllerStream {
         this.resetStream();
         this.rawInitial = new THREE.Vector3();
         this.rawCurrent = new THREE.Vector3();
+        this.rawPrevious = new THREE.Vector3();
         this.rawDelta = new THREE.Vector3();
         this.unitInitial = new THREE.Vector3();
         this.unitCurrent = new THREE.Vector3();
