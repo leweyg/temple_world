@@ -16,14 +16,19 @@ class ControllerMode {
 class ControllerStream {
     constructor() {
         this.isControllerStream = true;
+        this.rawId = -1;
         this.resetStream();
         this.rawInitial = new THREE.Vector3();
         this.rawCurrent = new THREE.Vector3();
+        this.rawDelta = new THREE.Vector3();
         this.unitInitial = new THREE.Vector3();
         this.unitCurrent = new THREE.Vector3();
     }
     resetStream() {
         this.isActive = false;
+        this.isStart = false;
+        this.isEnd = false;
+        this.isDown = false;
         this.mode = ControllerMode.None;
         this.rawLengthPath = 0;
         this.rawLengthCurrent = 0;
@@ -36,6 +41,9 @@ class ControllerGroup {
         this.cache = new CachedAlloc(() => new ControllerStream());
         this.callbacks = [];
     }
+    getActives() {
+        return this.cache.active;
+    }
     beginStream() {
         return this.cache.alloc();
     }
@@ -43,10 +51,10 @@ class ControllerGroup {
         console.assert(str.isControllerStream);
         this.cache.free(str);
     }
-    onControllerEvent(cntrl, isStart, isEnd) {
+    onControllerEvent(cntrl) {
         for (var i in this.callbacks) {
             var cb = this.callbacks[i];
-            cb(cntrl, isStart, isEnd);
+            cb(cntrl);
         }
     }
     listenControllerEvent(callback) {

@@ -13,7 +13,7 @@ class CachedAlloc {
         this.active.push(cur);
         return cur;
     }
-    free(str) {
+    free(cur) {
         console.assert(cur.isActive);
         cur.isActive = false;
         var ndx = this.active.indexOf(cur);

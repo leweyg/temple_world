@@ -9,14 +9,16 @@ class TempleAvatarControls {
         this.controlGroup = controlGroup;
         console.assert(this.controlGroup.isControllerGroup);
         var _this = this;
-        this.controlGroup.listenControllerEvent((c,s,e) => {
-            _this.onControllerEvent(c,s,e);
+        this.controlGroup.listenControllerEvent((c) => {
+            _this.onControllerEvent(c);
         });
     }
 
-    onControllerEvent(cntrl, isStart, isEnd) {
+    onControllerEvent(cntrl) {
         // do processing here
+        if ((!cntrl.isDown) && (!cntrl.isEnd)) return;
         console.log("Avatar recieved input.");
+
     }
 }
 
