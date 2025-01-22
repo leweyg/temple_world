@@ -2,6 +2,11 @@
 import * as THREE from 'three';
 import { ControllerMode, ControllerPhase } from '../controls/temple_controls.js';
 
+class ControlSettings {
+    static lookRateUpDown = 0.25
+    static lookRateSide = 0.25
+};
+
 class TempleAvatarControls {
 
     constructor(avatar, controlGroup) {
@@ -86,11 +91,11 @@ class TempleAvatarControls {
         avatarSide.copy(this._tvUp);
         avatarSide.cross(this.avatar.pose.bodyFacing);
 
-        const dx = control.unitCurrent.x * time.dt * -1.0;
+        const dx = control.unitCurrent.x * time.dt * -ControlSettings.lookRateSide;
         tq1.setFromAxisAngle(this._tvUp, dx);
         modFacing.applyQuaternion(tq1);
 
-        const dy = control.unitCurrent.y * time.dt * 1.0;
+        const dy = control.unitCurrent.y * time.dt * ControlSettings.lookRateUpDown;
         tq1.setFromAxisAngle(avatarSide, dy);
         modFacing.applyQuaternion(tq1);
         
@@ -99,6 +104,8 @@ class TempleAvatarControls {
         facingY = Math.max(-maxY, Math.min(maxY, facingY));
         modFacing.setY(facingY);
         modFacing.normalize();
+
+        this.avatar.pose.adjustCameraForViewFacing();
     }
 }
 
