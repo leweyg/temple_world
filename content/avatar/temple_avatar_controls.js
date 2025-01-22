@@ -70,12 +70,35 @@ class TempleAvatarControls {
         tv1.copy( control.unitCurrent );
         tv1.set( tv1.x, 0, tv1.y );
         tv1.multiplyScalar(1.0 * time.dt); // speed?
-        this.avatar.scene.position.add(tv1);
+        this.avatar.pose.bodyPos.add(tv1);
     }
 
+    _tq1 = new THREE.Quaternion();
+    _tv1 = new THREE.Vector3();
+    _tvUp = new THREE.Vector3(0,1.0,0);
+    _tvAcross = new THREE.Vector3(1.0,0,0);
     onUseControl_Look(control, time) {
         if (time == null) return;
+        const tq1 = this._tq1;
+        const modFacing = this.avatar.pose.viewFacing;
 
+        const avatarSide = this._tv1;
+        avatarSide.copy(this._tvUp);
+        avatarSide.cross(this.avatar.pose.bodyFacing);
+
+        const dx = control.unitCurrent.x * time.dt * -1.0;
+        tq1.setFromAxisAngle(this._tvUp, dx);
+        modFacing.applyQuaternion(tq1);
+
+        const dy = control.unitCurrent.y * time.dt * 1.0;
+        tq1.setFromAxisAngle(avatarSide, dy);
+        modFacing.applyQuaternion(tq1);
+        
+        var facingY = modFacing.y;
+        const maxY = 0.7;
+        facingY = Math.max(-maxY, Math.min(maxY, facingY));
+        modFacing.setY(facingY);
+        modFacing.normalize();
     }
 }
 

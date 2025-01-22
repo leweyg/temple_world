@@ -62,11 +62,14 @@
 				camera.position.set( 0, 0, 7 );
 
 				// controls
-				const controls = new OrbitControls( camera, renderer.domElement );
-				controls.addEventListener( 'change', request_redraw );
-				controls.minDistance =  2.5;
-				controls.maxDistance = 12.5;
-				controls.enablePan = false;
+				const useOrbitControls = false;
+				if (useOrbitControls) {
+					const controls = new OrbitControls( camera, renderer.domElement );
+					controls.addEventListener( 'change', request_redraw );
+					controls.minDistance =  2.5;
+					controls.maxDistance = 12.5;
+					controls.enablePan = false;
+				}
 
                 if (false) {
                     const loader = new THREE.TextureLoader()
