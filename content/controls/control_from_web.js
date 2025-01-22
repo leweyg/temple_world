@@ -13,6 +13,10 @@ class ControlFromWeb {
 		this.listenWith( 'pointerdown', this.onPointerDown );
         this.listenWith( 'pointermove', this.onPointerMove );
 		this.listenWith( 'pointerup', this.onPointerUp );
+
+        this.listenWith( 'pointerleave', this.onPointerDone );
+        this.listenWith( 'pointerout', this.onPointerDone );
+        this.listenWith( 'pointercancel', this.onPointerDone );
     }
 
     listenWith(name, method) {
@@ -98,6 +102,22 @@ class ControlFromWeb {
         var cur = this.ensureStreamById(id);
         cur.isDown = false;
         this.updateStreamFromPointer(cur, event, false, true);
+        this.controlGroup.onControllerEvent(cur);
+        this.controlGroup.endStream(cur);
+    }
+
+    onPointerDone(event) {
+        var id = event.pointerId
+        var cur = this.ensureStreamById(id);
+        if (cur.isDown || cur.isStart) {
+            // continue
+        } else {
+            return; // drop event
+        }
+        cur.isDown = false;
+        cur.isEnd = true;
+        cur.isStart = false;
+        // not valid: this.updateStreamFromPointer(cur, event, false, true);
         this.controlGroup.onControllerEvent(cur);
         this.controlGroup.endStream(cur);
     }
