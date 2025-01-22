@@ -12,6 +12,11 @@ class TempleAvatarControls {
     constructor(avatar, controlGroup) {
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
+
+        this.controlSpace = new THREE.Object3D();
+        this.controlSpace.name = "controlSpace";
+        this.avatar.world.worldScene.add(this.controlSpace);
+
         this.controlGroup = controlGroup;
         console.assert(this.controlGroup.isControllerGroup);
         var _this = this;
@@ -74,6 +79,7 @@ class TempleAvatarControls {
         const tv1 = this.tv1;
         tv1.copy( control.unitCurrent );
         tv1.set( tv1.x, 0, tv1.y );
+        this.controlSpace.localToWorld(tv1);
         tv1.multiplyScalar(1.0 * time.dt); // speed?
         this.avatar.pose.bodyPos.add(tv1);
     }
@@ -88,15 +94,14 @@ class TempleAvatarControls {
         const modFacing = this.avatar.pose.viewFacing;
 
         const avatarSide = this._tv1;
-        avatarSide.copy(this._tvUp);
-        avatarSide.cross(this.avatar.pose.bodyFacing);
+        avatarSide.copy(this._tvAcross);
+        this.controlSpace.localToWorld(avatarSide);
+        const dy = control.unitCurrent.y * time.dt * -ControlSettings.lookRateUpDown;
+        tq1.setFromAxisAngle(avatarSide, dy);
+        modFacing.applyQuaternion(tq1);
 
         const dx = control.unitCurrent.x * time.dt * -ControlSettings.lookRateSide;
         tq1.setFromAxisAngle(this._tvUp, dx);
-        modFacing.applyQuaternion(tq1);
-
-        const dy = control.unitCurrent.y * time.dt * ControlSettings.lookRateUpDown;
-        tq1.setFromAxisAngle(avatarSide, dy);
         modFacing.applyQuaternion(tq1);
         
         var facingY = modFacing.y;

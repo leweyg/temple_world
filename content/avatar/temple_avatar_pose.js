@@ -24,6 +24,17 @@ class TempleAvatarPose {
         this.applyFacingAsRotation(to, this.bodyFacing);
     }
 
+    _cv1 = new THREE.Vector3();
+    applyToControlSpace() {
+        var facing = this._cv1;
+        facing.copy(this.viewFacing);
+        facing.setY(0.0);
+        facing.normalize();
+        const outControlSpace = this.avatar.controls.controlSpace;
+        this.applyFacingAsRotation(outControlSpace, facing);
+        outControlSpace.position.set(0,0,0);
+    }
+
     _tv1 = new THREE.Vector3();
     _tv2 = new THREE.Vector3();
     applyToCamera() {
