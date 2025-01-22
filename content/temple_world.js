@@ -17,9 +17,9 @@ class TempleWorld {
         this.worldScene.name = "TempleWorld";
         parentScene.add(this.worldScene);
 
-        this.controlGroup = new ControllerGroup();
-
         this.space = new TempleSpace(this.worldScene);
+        
+        this.controlGroup = new ControllerGroup();
         this.avatar = new TempleAvatar(this, cameraThree, this.controlGroup);
 
         this.stats = {
