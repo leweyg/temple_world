@@ -17,7 +17,7 @@ class TempleAvatarPose {
 
         this.viewFovScale = 1.0;
         this.viewFovBase = 40;
-        this.viewFovRate = 10;
+        this.viewFovRate = 15;
     }
 
     applyToAvatarAll(time) {

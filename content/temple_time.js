@@ -23,15 +23,28 @@ class TempleTime {
         this.timeVirtualPrevious = this.timeVirtualStarted;
 
         this.timeCallbacks = [];
+        this.updateIsRequested = false;
+        this.updateHzMax = 60;
+        this.updateRealtimeCountdown = 0.0;
+        this.updateCallbackInternal = (() => _this.onTimeInterupt());
     }
 
-    requestUpdate() {
+    requestRealtimeForDuration(duration = 1.0) {
+        if (duration > this.updateRealtimeCountdown) {
+            this.updateRealtimeCountdown = duration;
+        }
+        this.requestUpdate();
+    }
+
+    requestUpdate(isForce=false) {
+        if (this.updateIsRequested && !isForce) {
+            return; // already requested
+        }
+        this.updateIsRequested = true;
         var _this = this;
+        const minTimeoutMS = 1000.0 / (3.0 * this.updateHzMax);
         // TODO: make sure only one request at a time
-        setTimeout(() => {
-            _this.requestRedrawCallback();
-        });
-        
+        setTimeout(this.updateCallbackInternal, minTimeoutMS);
     }
 
     listenToTime(callback) {
@@ -46,6 +59,24 @@ class TempleTime {
         return listner;
     }
 
+    onTimeInterupt() {
+        this.updateIsRequested = false;
+        const cur = TempleTime.timeNowSeconds();
+        const delta = cur - this.timeWallPrevious;
+        const minTimeStep = 1.0 / this.updateHzMax;
+        if (delta >= minTimeStep) {
+            this.requestRedrawCallback();
+            if (this.updateRealtimeCountdown > 0) {
+                this.requestUpdate();
+            }
+            return true;
+        } else {
+            // request again:
+            this.requestUpdate();
+            return false;
+        }
+    }
+
     stepTime() {
         var cur = TempleTime.timeNowSeconds();
         var delta = cur - this.timeWallPrevious;
@@ -57,6 +88,13 @@ class TempleTime {
         this.timeVirtualPrevious = this.timeVirtualCurrent;
         this.timeVirtualCurrent += this.timeVirtualStep;
         this.dt = this.timeVirtualStep;
+
+        if (this.updateRealtimeCountdown > 0) {
+            this.updateRealtimeCountdown -= this.realDt;
+            if (this.updateRealtimeCountdown < 0) {
+                this.updateRealtimeCountdown = 0;
+            }
+        }
 
         this.dispatchTime();
     }

@@ -7,6 +7,7 @@ class ControlSettings {
     static lookRateSide = 0.25
     static lookRateAimScalar = 0.25
     static aimZoomScalar = 0.5
+    static aimAnimDuration = 2.0;
 
     static speedWalk = 1.0;
     static speedRun = 3.0;
@@ -131,7 +132,15 @@ class TempleAvatarControls {
     _tvUp = new THREE.Vector3(0,1.0,0);
     _tvAcross = new THREE.Vector3(1.0,0,0);
     onUseControl_LookOrAim(control, time, isAim) {
-        if (time == null) return;
+        if (time == null) {
+            // start/stop stuff:
+            if (isAim && (control.isStart || control.isEnd)) {
+                time = this.avatar.world.time;
+                time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+            }
+            
+            return;
+        }
         const tq1 = this._tq1;
         const modFacing = this.avatar.pose.viewFacing;
         const lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
