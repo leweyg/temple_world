@@ -59,6 +59,16 @@ class TempleTime {
         return listner;
     }
 
+    isRealtimeActive() {
+        if (this.updateRealtimeCountdown > 0) {
+            return true;
+        }
+        if (!(this.realtimeUsers.isEmpty())) {
+            return true;
+        }
+        return false;
+    }
+
     onTimeInterupt() {
         this.updateIsRequested = false;
         const cur = TempleTime.timeNowSeconds();
@@ -66,7 +76,7 @@ class TempleTime {
         const minTimeStep = 1.0 / this.updateHzMax;
         if (delta >= minTimeStep) {
             this.requestRedrawCallback();
-            if (this.updateRealtimeCountdown > 0) {
+            if (this.isRealtimeActive()) {
                 this.requestUpdate();
             }
             return true;
@@ -80,6 +90,10 @@ class TempleTime {
     stepTime() {
         var cur = TempleTime.timeNowSeconds();
         var delta = cur - this.timeWallPrevious;
+        const maxTimeStep = 1.0 / 5.0;
+        if (delta > maxTimeStep) {
+            delta = maxTimeStep;
+        }
         this.timeWallPrevious = cur;
         this.timeWallStep = delta;
         this.realDt = this.timeWallStep;
@@ -89,11 +103,13 @@ class TempleTime {
         this.timeVirtualCurrent += this.timeVirtualStep;
         this.dt = this.timeVirtualStep;
 
-        if (this.updateRealtimeCountdown > 0) {
-            this.updateRealtimeCountdown -= this.realDt;
-            if (this.updateRealtimeCountdown < 0) {
-                this.updateRealtimeCountdown = 0;
+        var realtimeLeft = this.updateRealtimeCountdown;
+        if (realtimeLeft > 0) {
+            realtimeLeft -= this.realDt;
+            if (realtimeLeft < 0) {
+                realtimeLeft = 0;
             }
+            this.updateRealtimeCountdown = realtimeLeft;
         }
 
         this.dispatchTime();
@@ -102,7 +118,9 @@ class TempleTime {
     dispatchTime() {
         for (var i in this.realtimeUsers.active) {
             var tl = this.realtimeUsers.active[i];
-            tl.callback(this);
+            if (tl.callback) {
+                tl.callback(this);
+            }
         }
         for (var i in this.timeUsers.active) {
             var tl = this.timeUsers.active[i];

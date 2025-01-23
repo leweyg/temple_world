@@ -7,6 +7,9 @@ class CachedAlloc {
         this.active = [];
         this.cached = [];
     }
+    isEmpty() {
+        return (this.active.length == 0);
+    }
     alloc() {
         var cur = this.ensureAllocStream();
         if (this.resetCallback) {

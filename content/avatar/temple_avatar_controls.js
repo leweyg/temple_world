@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { ControllerMode, ControllerPhase } from '../controls/temple_controls.js';
 
 class ControlSettings {
-    static lookRateUpDown = 0.25
-    static lookRateSide = 0.25
+    static lookRateUpDown = 0.5
+    static lookRateSide = 0.5
     static lookRateAimScalar = 0.25
     static aimZoomScalar = 0.5
     static aimAnimDuration = 2.0;
@@ -42,13 +42,20 @@ class TempleAvatarControls {
         this.avatar.pose.viewFovScale = 1.0;
 
         // controllers:
+        var anyDown = false;
         var acts = this.controlGroup.getActives();
         for (var ci in acts) {
             var c = acts[ci];
             this.onUseControl(c, time);
+            if (c.isDown) {
+                anyDown = true;
+            }
         }
 
         // after controllers
+        if (anyDown) {
+            this.avatar.world.time.requestUpdate();
+        }
     }
 
     onControllerEvent(control) {
