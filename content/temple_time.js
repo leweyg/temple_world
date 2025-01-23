@@ -72,6 +72,19 @@ class TempleTime {
         }
     }
 
+    fadeFloatRealTime(from, to, distPerSecond=1.0) {
+        const dt = this.realDt;
+        const maxChange = dt * distPerSecond;
+        const curChange = (to - from);
+        const absChange = Math.abs( curChange );
+        if (absChange < maxChange) {
+            return to;
+        } else {
+            const dv = maxChange * Math.sign( curChange );
+            return from + dv;
+        }
+    }
+
     static timeNowSeconds() {
         var tm = new Date();
         var secs = tm.getTime() / 1000;

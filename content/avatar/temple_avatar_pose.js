@@ -17,6 +17,7 @@ class TempleAvatarPose {
 
         this.viewFovScale = 1.0;
         this.viewFovBase = 40;
+        this.viewFovRate = 10;
     }
 
     applyToAvatarAll(time) {
@@ -60,7 +61,7 @@ class TempleAvatarPose {
         this.applyFacingAsRotation(camScene, this.viewFacing);
 
         const nextFov = this.viewFovBase * this.viewFovScale;
-        camScene.fov = nextFov;
+        camScene.fov = time.fadeFloatRealTime( camScene.fov, nextFov, this.viewFovRate );
         camScene.updateProjectionMatrix();
     }
 
