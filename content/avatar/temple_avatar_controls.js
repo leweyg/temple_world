@@ -61,7 +61,7 @@ class TempleAvatarControls {
         tv1.copy(control.unitCurrent);
         tv1.multiplyScalar(0.5);
         tv1.add(hand.initialPos);
-        hand.scene.position.copy(tv1);
+        //hand.scene.position.copy(tv1);
 
         this.avatar.world.time.requestUpdate();
     }
@@ -76,16 +76,25 @@ class TempleAvatarControls {
 
     onUseControl_Move(control, time) {
         if (time == null) return;
-        const tv1 = this.tv1;
+        const tv1 = this._tv1;
+        const tv2 = this._tv2;
         tv1.copy( control.unitCurrent );
+        var motion = tv1.length();
         tv1.set( tv1.x, 0, tv1.y );
         this.controlSpace.localToWorld(tv1);
+        tv2.copy(tv1);
         tv1.multiplyScalar(1.0 * time.dt); // speed?
-        this.avatar.pose.bodyPos.add(tv1);
+        const minToTurn = 0.1;
+        if (motion > minToTurn) {
+            this.avatar.pose.bodyPos.add(tv1);
+            tv2.normalize();
+            this.avatar.pose.bodyFacing.copy(tv2);
+        }
     }
 
     _tq1 = new THREE.Quaternion();
     _tv1 = new THREE.Vector3();
+    _tv2 = new THREE.Vector3();
     _tvUp = new THREE.Vector3(0,1.0,0);
     _tvAcross = new THREE.Vector3(1.0,0,0);
     onUseControl_Look(control, time) {

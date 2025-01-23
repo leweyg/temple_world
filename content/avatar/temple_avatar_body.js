@@ -12,6 +12,10 @@ class TempleAvatarBodyPart {
 class TempleAvatarBody {
 
     constructor(parentScene) {
+        this.scene = new THREE.Group();
+        this.scene.name = "TempleAvatarBody";
+        parentScene.add(this.scene);
+
         this.isAvatarBody = true;
         var radius = 1.0/6.0;
         var seg_around = 32;
@@ -23,7 +27,7 @@ class TempleAvatarBody {
         for (var i=0; i<3; i++) {
             const sphere = new THREE.Mesh( geometry, material );
             sphere.position.setY(radius * (1.0 + (i*2.0)));
-            parentScene.add( sphere );
+            this.scene.add( sphere );
             var part = new TempleAvatarBodyPart(sphere);
             this.primary.push(part);
         }
@@ -34,7 +38,7 @@ class TempleAvatarBody {
             const sphere = new THREE.Mesh( geometry, material );
             sphere.position.setY(radius * 4.0);
             sphere.position.setX(radius * 2.0 * iSign);
-            parentScene.add( sphere );
+            this.scene.add( sphere );
             var part = new TempleAvatarBodyPart(sphere);
             this.hands.push(part);
         }

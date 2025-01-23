@@ -18,7 +18,13 @@ class TempleAvatarPose {
         this.viewZoomScale = 1.0;
     }
 
-    applyToAvatar() {
+    applyToAvatarAll() {
+        this.applyToBody();
+        this.applyToControlSpace();
+        this.applyToCamera();
+    }
+
+    applyToBody() {
         const to = this.avatar.scene;
         to.position.copy(this.bodyPos);
         this.applyFacingAsRotation(to, this.bodyFacing);

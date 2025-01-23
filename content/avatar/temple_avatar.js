@@ -26,9 +26,7 @@ class TempleAvatar {
 
     onTimeStepped(time) {
         this.controls.onTimeStepped(time);
-        this.pose.applyToAvatar();
-        this.pose.applyToControlSpace();
-        this.pose.applyToCamera();
+        this.pose.applyToAvatarAll();
     }
 }
 
