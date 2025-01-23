@@ -5,6 +5,9 @@ import { ControllerMode, ControllerPhase } from '../controls/temple_controls.js'
 class ControlSettings {
     static lookRateUpDown = 0.25
     static lookRateSide = 0.25
+
+    static speedWalk = 1.0;
+    static speedRun = 3.0;
 };
 
 class TempleAvatarControls {
@@ -46,10 +49,20 @@ class TempleAvatarControls {
         if (control.isStart) {
             console.assert(control.mode == ControllerMode.None);
             const halfRangeX = control.rawRange.x * 0.5;
+            const halfRangeY = control.rawRange.y * 0.5;
+            const isTopY = (control.rawInitial.y < halfRangeY);
             if (control.rawInitial.x < halfRangeX) {
-                control.mode = ControllerMode.Walk;
+                if (isTopY) {
+                    control.mode = ControllerMode.Run;
+                } else {
+                    control.mode = ControllerMode.Walk;
+                }
             } else {
-                control.mode = ControllerMode.Look;
+                if (isTopY) {
+                    control.mode = ControllerMode.Aim;
+                } else {
+                    control.mode = ControllerMode.Look;
+                }
             }
         }
         this.onUseControl(control, null);
@@ -68,13 +81,15 @@ class TempleAvatarControls {
 
     onUseControl(control, time) {
         if (control.mode == ControllerMode.Walk) {
-            this.onUseControl_Walk(control, time);
+            this.onUseControl_WalkOrRun(control, time, false);
+        } else if (control.mode == ControllerMode.Run) {
+            this.onUseControl_WalkOrRun(control, time, true);
         } else if (control.mode == ControllerMode.Look) {
             this.onUseControl_Look(control, time);
         }
     }
 
-    onUseControl_Walk(control, time) {
+    onUseControl_WalkOrRun(control, time, isRun) {
         if (time == null) return;
         const tv1 = this._tv1;
         const tv2 = this._tv2;
@@ -83,7 +98,8 @@ class TempleAvatarControls {
         tv1.set( tv1.x, 0, tv1.y );
         this.controlSpace.localToWorld(tv1);
         tv2.copy(tv1);
-        tv1.multiplyScalar(1.0 * time.dt); // speed?
+        const baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk
+        tv1.multiplyScalar(baseSpeed * time.dt);
         const minToTurn = 0.1;
         if (motion > minToTurn) {
             this.avatar.pose.bodyPos.add(tv1);
