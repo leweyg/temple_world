@@ -26,7 +26,12 @@ class TempleTime {
     }
 
     requestUpdate() {
-        this.requestRedrawCallback();
+        var _this = this;
+        // TODO: make sure only one request at a time
+        setTimeout(() => {
+            _this.requestRedrawCallback();
+        });
+        
     }
 
     listenToTime(callback) {

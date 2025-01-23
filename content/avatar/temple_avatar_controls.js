@@ -52,7 +52,7 @@ class TempleAvatarControls {
 
     onControllerEvent(control) {
         // do processing here
-        if ((!control.isDown) && (!control.isEnd)) return;
+        //if ((!control.isDown) && (!control.isEnd)) return;
 
         if (control.isStart) {
             console.assert(control.mode == ControllerMode.None);
@@ -75,14 +75,17 @@ class TempleAvatarControls {
         }
         this.onUseControl(control, null);
 
-        //console.log("Avatar recieved input.");
-        var hand = this.avatar.body.hands[0];
-        const tv1 = this.tv1;
+        const animateHand = false;
+        if (animateHand) {
+            //console.log("Avatar recieved input.");
+            var hand = this.avatar.body.hands[0];
+            const tv1 = this.tv1;
 
-        tv1.copy(control.unitCurrent);
-        tv1.multiplyScalar(0.5);
-        tv1.add(hand.initialPos);
-        //hand.scene.position.copy(tv1);
+            tv1.copy(control.unitCurrent);
+            tv1.multiplyScalar(0.5);
+            tv1.add(hand.initialPos);
+            hand.scene.position.copy(tv1);
+        }
 
         this.avatar.world.time.requestUpdate();
     }

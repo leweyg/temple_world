@@ -19,20 +19,20 @@ class TempleAvatarPose {
         this.viewFovBase = 40;
     }
 
-    applyToAvatarAll() {
-        this.applyToBody();
-        this.applyToControlSpace();
-        this.applyToCamera();
+    applyToAvatarAll(time) {
+        this.applyToBody(time);
+        this.applyToControlSpace(time);
+        this.applyToCamera(time);
     }
 
-    applyToBody() {
+    applyToBody(time) {
         const to = this.avatar.scene;
         to.position.copy(this.bodyPos);
         this.applyFacingAsRotation(to, this.bodyFacing);
     }
 
     _cv1 = new THREE.Vector3();
-    applyToControlSpace() {
+    applyToControlSpace(time) {
         var facing = this._cv1;
         facing.copy(this.viewFacing);
         facing.setY(0.0);
@@ -44,7 +44,7 @@ class TempleAvatarPose {
 
     _tv1 = new THREE.Vector3();
     _tv2 = new THREE.Vector3();
-    applyToCamera() {
+    applyToCamera(time) {
         var camPos = this._tv1;
         var extra = this._tv2;
 
@@ -59,7 +59,8 @@ class TempleAvatarPose {
         camScene.position.copy(camPos);
         this.applyFacingAsRotation(camScene, this.viewFacing);
 
-        camScene.fov = this.viewFovBase * this.viewFovScale;
+        const nextFov = this.viewFovBase * this.viewFovScale;
+        camScene.fov = nextFov;
         camScene.updateProjectionMatrix();
     }
 
