@@ -18,6 +18,13 @@ class ControlFromWeb {
         this.listenWith( 'pointerleave', this.onPointerDone );
         this.listenWith( 'pointerout', this.onPointerDone );
         this.listenWith( 'pointercancel', this.onPointerDone );
+
+        var justPreventDefault = ((e) => {
+            e.preventDefault();
+          });
+        this.domElement.addEventListener('contextmenu', justPreventDefault);
+        this.domElement.addEventListener('touchstart', justPreventDefault);
+        
     }
 
     listenWith(name, method) {
