@@ -6,6 +6,7 @@ class ControlFromWeb {
     constructor(domElement, controlGroup) {
         this.domElement = domElement;
         this.controlGroup = controlGroup;
+        this.domElement.style['touch-action'] = "none"; // disables default scroll
 
         this.unitRadiusPixels = 100.0;
 
@@ -21,7 +22,12 @@ class ControlFromWeb {
 
     listenWith(name, method) {
         var callback = method.bind(this);
-        this.domElement.addEventListener( name, callback );
+        var _this = this;
+        function pointerCallback(ev) {
+            ev.preventDefault();
+            callback(ev);
+        };
+        this.domElement.addEventListener( name, pointerCallback );
     }
 
     findStreamById(id) {
