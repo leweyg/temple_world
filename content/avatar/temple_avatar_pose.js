@@ -15,7 +15,8 @@ class TempleAvatarPose {
         this.viewDistanceBase = 7.0;
         this.viewDistanceAdjusted = this.viewDistanceBase;
 
-        this.viewZoomScale = 1.0;
+        this.viewFovScale = 1.0;
+        this.viewFovBase = 40;
     }
 
     applyToAvatarAll() {
@@ -57,6 +58,9 @@ class TempleAvatarPose {
         var camScene = this.avatar.view.cameraThree;
         camScene.position.copy(camPos);
         this.applyFacingAsRotation(camScene, this.viewFacing);
+
+        camScene.fov = this.viewFovBase * this.viewFovScale;
+        camScene.updateProjectionMatrix();
     }
 
     _tvZero = new THREE.Vector3();

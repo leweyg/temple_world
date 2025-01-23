@@ -5,6 +5,8 @@ import { ControllerMode, ControllerPhase } from '../controls/temple_controls.js'
 class ControlSettings {
     static lookRateUpDown = 0.25
     static lookRateSide = 0.25
+    static lookRateAimScalar = 0.25
+    static aimZoomScalar = 0.5
 
     static speedWalk = 1.0;
     static speedRun = 3.0;
@@ -35,11 +37,17 @@ class TempleAvatarControls {
     }
 
     onTimeStepped(time) {
+        // before controllers:
+        this.avatar.pose.viewFovScale = 1.0;
+
+        // controllers:
         var acts = this.controlGroup.getActives();
         for (var ci in acts) {
             var c = acts[ci];
             this.onUseControl(c, time);
         }
+
+        // after controllers
     }
 
     onControllerEvent(control) {
@@ -85,7 +93,13 @@ class TempleAvatarControls {
         } else if (control.mode == ControllerMode.Run) {
             this.onUseControl_WalkOrRun(control, time, true);
         } else if (control.mode == ControllerMode.Look) {
-            this.onUseControl_Look(control, time);
+            this.onUseControl_LookOrAim(control, time, false);
+        } else if (control.mode == ControllerMode.Aim) {
+            this.onUseControl_LookOrAim(control, time, true);
+        } else if (control.mode == ControllerMode.None) {
+            // all good
+        } else {
+            console.log("TODO: onUseControl for '" + control.mode + "'.");
         }
     }
 
@@ -113,19 +127,20 @@ class TempleAvatarControls {
     _tv2 = new THREE.Vector3();
     _tvUp = new THREE.Vector3(0,1.0,0);
     _tvAcross = new THREE.Vector3(1.0,0,0);
-    onUseControl_Look(control, time) {
+    onUseControl_LookOrAim(control, time, isAim) {
         if (time == null) return;
         const tq1 = this._tq1;
         const modFacing = this.avatar.pose.viewFacing;
+        const lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
 
         const avatarSide = this._tv1;
         avatarSide.copy(this._tvAcross);
         this.controlSpace.localToWorld(avatarSide);
-        const dy = control.unitCurrent.y * time.dt * -ControlSettings.lookRateUpDown;
+        const dy = control.unitCurrent.y * time.dt * lookSpeed * -ControlSettings.lookRateUpDown;
         tq1.setFromAxisAngle(avatarSide, dy);
         modFacing.applyQuaternion(tq1);
 
-        const dx = control.unitCurrent.x * time.dt * -ControlSettings.lookRateSide;
+        const dx = control.unitCurrent.x * time.dt * lookSpeed * -ControlSettings.lookRateSide;
         tq1.setFromAxisAngle(this._tvUp, dx);
         modFacing.applyQuaternion(tq1);
         
@@ -136,6 +151,7 @@ class TempleAvatarControls {
         modFacing.normalize();
 
         this.avatar.pose.adjustCameraForViewFacing();
+        this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimZoomScalar : 1.0;
     }
 }
 
