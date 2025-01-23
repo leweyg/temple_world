@@ -13,7 +13,7 @@ class ControllerPhase {
 
 class ControllerMode {
     static None = "None";
-    static Move = "Move";
+    static Walk = "Walk";
     static Run = "Run";
     static Look = "Look";
     static Aim = "Aim";

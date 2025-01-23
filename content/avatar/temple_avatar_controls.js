@@ -47,7 +47,7 @@ class TempleAvatarControls {
             console.assert(control.mode == ControllerMode.None);
             const halfRangeX = control.rawRange.x * 0.5;
             if (control.rawInitial.x < halfRangeX) {
-                control.mode = ControllerMode.Move;
+                control.mode = ControllerMode.Walk;
             } else {
                 control.mode = ControllerMode.Look;
             }
@@ -67,14 +67,14 @@ class TempleAvatarControls {
     }
 
     onUseControl(control, time) {
-        if (control.mode == ControllerMode.Move) {
-            this.onUseControl_Move(control, time);
+        if (control.mode == ControllerMode.Walk) {
+            this.onUseControl_Walk(control, time);
         } else if (control.mode == ControllerMode.Look) {
             this.onUseControl_Look(control, time);
         }
     }
 
-    onUseControl_Move(control, time) {
+    onUseControl_Walk(control, time) {
         if (time == null) return;
         const tv1 = this._tv1;
         const tv2 = this._tv2;
