@@ -4,6 +4,7 @@ import { TempleTime } from './temple_time.js';
 import { TempleAvatar } from './avatar/temple_avatar.js'
 import { TempleSpace } from './spaces/temple_space.js'
 import { ControllerGroup } from './controls/temple_controls.js'
+import { ResourceTree } from './code/resource_tree.js';
 
 
 class TempleWorld {
@@ -12,12 +13,15 @@ class TempleWorld {
         this.parentScene = parentScene;
         this.requestRedrawCallback = requestRedrawCallback;
         this.time = new TempleTime(requestRedrawCallback);
+        
+        ResourceTree.RequestUpdate = (() => this.time.requestUpdate());
+        this.resourceRoot = new ResourceTree();
 
         this.worldScene = new THREE.Group();
         this.worldScene.name = "TempleWorld";
         parentScene.add(this.worldScene);
 
-        this.space = new TempleSpace(this.worldScene);
+        this.space = new TempleSpace(this);
         
         this.controlGroup = new ControllerGroup();
         this.avatar = new TempleAvatar(this, cameraThree, this.controlGroup);
