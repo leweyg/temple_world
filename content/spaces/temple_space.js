@@ -12,21 +12,37 @@ class TempleSpace {
         this.scene.name = "TempleSpace";
         world.worldScene.add(this.scene);
 
-        this.levels = world.resourceRoot.subResourceScene("ActiveSpaces");
-        this.addLevelByCallback("Floor", k => {
+        this.levels = world.resourceRoot.subResourceScene("ActiveSpaces", this.scene);
+        this.registerLevelByCallback("Floor", k => {
             new TempleSpaceDirectionsBuilder(k);
         });
-        this.addLevelByCallback("KalaChakra", k => {
+        this.registerLevelByCallback("KalaChakra", k => {
             new TempleSpaceKalaChakra(k);
-        });
+        }, true);
+        this.ensureLevel("Floor");
 
         this.lights = new TempleLights(this.scene);
     }
 
-    addLevelByCallback(name, callback) {
+    registerLevelByCallback(name, callback, autoLoad=false) {
         console.assert(callback);
-        var res = this.levels.subResourceScene(name, this.scene, callback);
+        var res = this.levels.subResourceScene(name, null, callback);
+        if (autoLoad) {
+            res.instanceAsync(this.scene);
+        }
         return res;
+    }
+
+    ensureLevel(name) {
+        var res = this.levels.resourceFindByPath(name);
+        console.assert(res);
+        res.instanceAsync(this.scene);
+    }
+
+    leaveLevel(name) {
+        var res = this.levels.resourceFindByPath(name);
+        console.assert(res);
+        res.disposeInstance(); // TODO
     }
 
 

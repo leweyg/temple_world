@@ -80,6 +80,7 @@ class ResourceTree {
         this.resource_type = (resource_type) ? resource_type : ResourceTree.TypeGeneric;
         this.state_loader = null;
         this.state_instancer = null;
+        this.state_instance_callback = null;
         this.state_disposed = false;
 
         // Tree:
@@ -100,16 +101,18 @@ class ResourceTree {
         return this.resourceAddChildByPath(path, type);
     }
 
-    subResourceScene(name, parent, callback) {
+    // Creates a scene-typed resource
+    //  If a parent is given, the resource is instantiated
+    //  If a callback is given, it is passed the created scene
+    subResourceScene(name, parent=null, callback=null) {
         var res = this.resourceFindByPath(name);
         if (res) return res;
 
         var res = this.resourceAddChildByPath(name, ResourceTree.TypeThreeGroup);
-        res.instanceAsync(parent).then(scene => {
-            if (callback) callback(scene);
-            ResourceTree.RequestUpdate();
-            return scene;
-        });
+        res.state_instance_callback = callback;
+        if (parent) {
+            res.instanceAsync(parent);
+        }
         return res;
     }
 
@@ -138,9 +141,15 @@ class ResourceTree {
         var _this = this;
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then(subScene => {
-            var inst = _this.resource_type.makeResourceInstanceFromLoaded(
-                subScene, parent);
-            return inst;
+            var instProm = _this.resource_type.makeResourceInstanceFromLoaded(
+                subScene, parent );
+            console.assert(instProm);
+            instProm.then(inst => {
+                if (_this.state_instance_callback) {
+                    _this.state_instance_callback(inst);
+                }
+            });
+            return instProm;
         });
         return this.state_instancer;
     }
