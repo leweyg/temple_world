@@ -18,7 +18,7 @@ class ResourceType {
         throw "NotOverloaded: ResourceType.doResourceInstance";
     }
     releaseResourcePromise(loader) {
-        throw "NotOverloaded: ResourceType.releaseResourcePromise";
+        // usually empty nullify
     }
     releaseResourceInstance(inst) {
         throw "NotOverloaded: ResourceType.releaseResourceInstance";
@@ -43,6 +43,8 @@ class ResourceTypeThreeGroup extends ResourceType {
             resolve(path);
         });
     }
+    releaseResourcePromise(loader) {
+    }
     makeResourceInstanceFromLoaded(res, parent) {
         var obj = new THREE.Group();
         obj.name = res;
@@ -63,7 +65,7 @@ class ResourceTypeThreeGroup extends ResourceType {
 }
 
 class ResourceHelpers {
-    removeFromArray(array, item) {
+    static removeFromArray(array, item) {
         const index = array.indexOf(item);
         if (index > -1) { // only splice array when item is found
             array.splice(index, 1); // 2nd parameter means remove one item only
@@ -154,13 +156,7 @@ class ResourceTree {
         return this.state_instancer;
     }
 
-    dispose() {
-        if (this.state_disposed) return;
-        this.state_disposed = true;
-        if (this.tree_parent) {
-            ResourceHelpers.removeFromArray(this.tree_parent.tree_children, this);
-            this.tree_parent = null;
-        }
+    disposeInstance() {
         if (this.state_instancer) {
             var _this = this;
             this.state_instancer.then(inst => {
@@ -168,12 +164,27 @@ class ResourceTree {
             });
             this.state_instancer = null;
         }
+    }
+
+    disposeLoad() {
         this.state_loaded = null;
         if (this.state_loader) {
             this.resource_type.releaseResourcePromise(this.state_loader);
             this.state_loader = null;
         }
-        
+    }
+
+    disposeTree() {
+        if (this.tree_parent) {
+            ResourceHelpers.removeFromArray(this.tree_parent.tree_children, this);
+            this.tree_parent = null;
+        }
+    }
+
+    dispose() {
+        this.disposeInstance();
+        this.disposeLoad();
+        this.disposeTree();
     }
 
     resourceFindByPath(path, lookUp=true) {

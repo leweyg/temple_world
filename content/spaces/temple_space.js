@@ -21,7 +21,24 @@ class TempleSpace {
         }, true);
         this.ensureLevel("Floor");
 
+        const testUnload = false;
+        if (testUnload) {
+            this.testLevelLeaving();
+        }
+
         this.lights = new TempleLights(this.scene);
+    }
+
+    testLevelLeaving() {
+        var _this = this;
+        setTimeout(() => {
+            _this.leaveLevel("Floor");
+            ResourceTree.RequestUpdate();
+            setTimeout(() => {
+                _this.ensureLevel("Floor");
+                ResourceTree.RequestUpdate();
+            }, 1000);
+        }, 1000);
     }
 
     registerLevelByCallback(name, callback, autoLoad=false) {
@@ -42,7 +59,8 @@ class TempleSpace {
     leaveLevel(name) {
         var res = this.levels.resourceFindByPath(name);
         console.assert(res);
-        res.disposeInstance(); // TODO
+        res.disposeInstance();
+        res.disposeLoad();
     }
 
 
