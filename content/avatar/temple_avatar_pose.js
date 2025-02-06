@@ -36,11 +36,17 @@ class TempleAvatarPose {
     applyToControlSpace(time) {
         var facing = this._cv1;
         facing.copy(this.viewFacing);
+
+        facing.normalize();
+        const controlSpaceFly = this.avatar.controls.controlSpaceFly;
+        this.applyFacingAsRotation(controlSpaceFly, facing);
+        controlSpaceFly.position.set(0,0,0);
+
         facing.setY(0.0);
         facing.normalize();
-        const outControlSpace = this.avatar.controls.controlSpace;
-        this.applyFacingAsRotation(outControlSpace, facing);
-        outControlSpace.position.set(0,0,0);
+        const controlSpace = this.avatar.controls.controlSpace;
+        this.applyFacingAsRotation(controlSpace, facing);
+        controlSpace.position.set(0,0,0);
     }
 
     _tv1 = new THREE.Vector3();

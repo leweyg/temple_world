@@ -22,6 +22,9 @@ class TempleAvatarControls {
         this.controlSpace = new THREE.Object3D();
         this.controlSpace.name = "controlSpace";
         this.avatar.world.worldScene.add(this.controlSpace);
+        this.controlSpaceFly = new THREE.Object3D();
+        this.controlSpaceFly.name = "controlSpaceFly";
+        this.avatar.world.worldScene.add(this.controlSpaceFly);
 
         this.controlGroup = controlGroup;
         console.assert(this.controlGroup.isControllerGroup);
@@ -121,13 +124,15 @@ class TempleAvatarControls {
         tv1.copy( control.unitCurrent );
         var motion = tv1.length();
         tv1.set( tv1.x, 0, tv1.y );
-        this.controlSpace.localToWorld(tv1);
+        const localToControl = isRun ? this.controlSpaceFly : this.controlSpace;
+        localToControl.localToWorld(tv1);
         tv2.copy(tv1);
         const baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk
         tv1.multiplyScalar(baseSpeed * time.dt);
         const minToTurn = 0.1;
         if (motion > minToTurn) {
             this.avatar.pose.bodyPos.add(tv1);
+            tv2.setY(0);
             tv2.normalize();
             this.avatar.pose.bodyFacing.copy(tv2);
         }
