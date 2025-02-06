@@ -14,15 +14,21 @@ class ResourceType {
     makeResourcePromiseFromPath(path) {
         throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
     }
-    makeResourceInstanceFromLoaded(res, parent) {
+    makeResourceInstanceFromLoaded(res, parent, parentRes) {
         throw "NotOverloaded: ResourceType.doResourceInstance";
-    }
-    releaseResourcePromise(loader) {
-        // usually empty nullify
     }
     releaseResourceInstance(inst) {
         throw "NotOverloaded: ResourceType.releaseResourceInstance";
     }
+    releaseResourcePromise(loader) {
+        // usually empty nullify
+    }
+    simplePromise(val) {
+        return new Promise((resolve) => {
+            resolve(val);
+        });
+    }
+
 };
 
 class ResourceTypeJson extends ResourceType {
@@ -31,7 +37,7 @@ class ResourceTypeJson extends ResourceType {
         ans = ans.then(res => res.json());
         return ans;
     }
-    makeResourceInstanceFromLoaded(res, parent) {
+    makeResourceInstanceFromLoaded(res, parent, parentRes) {
         throw "TODO";
     }
 }
@@ -45,7 +51,7 @@ class ResourceTypeThreeGroup extends ResourceType {
     }
     releaseResourcePromise(loader) {
     }
-    makeResourceInstanceFromLoaded(res, parent) {
+    makeResourceInstanceFromLoaded(res, parent, parentRes) {
         var obj = new THREE.Group();
         obj.name = res;
         if (parent) {
@@ -83,6 +89,7 @@ class ResourceTree {
         this.state_loader = null;
         this.state_instancer = null;
         this.state_instance_callback = null;
+        this.state_instance_latest = null;
         this.state_disposed = false;
 
         // Tree:
@@ -144,11 +151,13 @@ class ResourceTree {
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then(subScene => {
             var instProm = _this.resource_type.makeResourceInstanceFromLoaded(
-                subScene, parent );
+                subScene, parent, _this );
             console.assert(instProm);
             instProm.then(inst => {
+                console.assert(!_this.state_instance_latest);
+                _this.state_instance_latest = inst;
                 if (_this.state_instance_callback) {
-                    _this.state_instance_callback(inst);
+                    _this.state_instance_callback(inst,_this);
                 }
             });
             return instProm;
@@ -156,7 +165,24 @@ class ResourceTree {
         return this.state_instancer;
     }
 
+    instanceTrySync() {
+        if (this.state_instance_latest) {
+            return this.state_instance_latest;
+        }
+        // begin request:
+        if (!this.state_instancer) {
+            this.instanceAsync();
+            if (this.state_instance_latest) {
+                return this.state_instance_latest;
+            }
+        }
+        return null;
+    }
+
     disposeInstance() {
+        if (this.state_instance_latest) {
+            this.state_instance_latest = null;
+        }
         if (this.state_instancer) {
             var _this = this;
             this.state_instancer.then(inst => {

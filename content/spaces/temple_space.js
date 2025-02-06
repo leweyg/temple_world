@@ -4,6 +4,7 @@ import { TempleSpaceDirectionsBuilder } from './space_directions.js'
 import { TempleLights } from './space_lights.js'
 import { TempleSpaceKalaChakra } from './space_kalachakra.js'
 import { ResourceTree } from '../code/resource_tree.js';
+import { SpaceTrainingBoxes } from './space_training_boxes.js';
 
 class TempleSpace {
 
@@ -13,13 +14,18 @@ class TempleSpace {
         world.worldScene.add(this.scene);
 
         this.levels = world.resourceRoot.subResourceScene("ActiveSpaces", this.scene);
+        this.resources = this.levels;
         this.registerLevelByCallback("Floor", k => {
             new TempleSpaceDirectionsBuilder(k);
         });
         this.registerLevelByCallback("KalaChakra", k => {
             new TempleSpaceKalaChakra(k);
         }, true);
+        this.registerLevelByCallback("TrainingBoxes", k => {
+            new SpaceTrainingBoxes(k, this.resources);
+        }, true);
         this.ensureLevel("Floor");
+        this.ensureLevel("TrainingBoxes");
 
         const testUnload = false;
         if (testUnload) {
