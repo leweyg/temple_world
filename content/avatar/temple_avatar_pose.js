@@ -71,7 +71,7 @@ class TempleAvatarPose {
         camScene.fov = time.fadeFloatRealTime( camScene.fov, nextFov, this.viewFovRate );
         camScene.updateProjectionMatrix();
 
-        view.postCameraMoved(this.avatar.world);
+        view.postCameraMoved();
     }
 
     _tvZero = new THREE.Vector3();

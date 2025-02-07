@@ -32,7 +32,7 @@ class TempleAvatarView {
             hitField = field;
         }
         if (this.centerField != hitField) {
-            if (this.centerField && this.centerField.is_focusable) this.centerField.doFocusedChanged(false);
+            if (this.centerField) this.centerField.doFocusedChanged(false);
             this.centerField = hitField;
             if (this.centerField) this.centerField.doFocusedChanged(true);
         }
