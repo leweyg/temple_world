@@ -62,13 +62,16 @@ class TempleAvatarPose {
         extra.multiplyScalar(-this.viewDistanceAdjusted);
         camPos.add(extra);
 
-        var camScene = this.avatar.view.cameraThree;
+        var view = this.avatar.view;
+        var camScene = view.cameraThree;
         camScene.position.copy(camPos);
         this.applyFacingAsRotation(camScene, this.viewFacing);
 
         const nextFov = this.viewFovBase * this.viewFovScale;
         camScene.fov = time.fadeFloatRealTime( camScene.fov, nextFov, this.viewFovRate );
         camScene.updateProjectionMatrix();
+
+        view.postCameraMoved(this.avatar.world);
     }
 
     _tvZero = new THREE.Vector3();

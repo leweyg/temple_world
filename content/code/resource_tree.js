@@ -87,6 +87,7 @@ class ResourceTree {
         this.resource_path = path;
         this.resource_type = (resource_type) ? resource_type : ResourceTree.TypeGeneric;
         this.state_loader = null;
+        this.state_loaded_latest = null;
         this.state_instancer = null;
         this.state_instance_callback = null;
         this.state_instance_latest = null;
@@ -102,6 +103,9 @@ class ResourceTree {
     static TypeThreeGroup = new ResourceTypeThreeGroup();
     static TypeJson = new ResourceTypeJson();
     static RequestUpdate = (() => {});
+
+    latestLoaded() { return this.state_loaded_latest; }
+    latestInstance() { return this.state_instance_latest; }
 
     subResource(path, type=ResourceTree.TypeGeneric) {
         console.assert(!this.state_disposed);
@@ -135,8 +139,8 @@ class ResourceTree {
         var _this = this;
         this.state_loader.then(k => {
             if (k) {
-                console.assert(!_this.state_loaded);
-                _this.state_loaded = k;
+                console.assert(!_this.state_loaded_latest);
+                _this.state_loaded_latest = k;
             }
         });
         return this.state_loader;
@@ -193,7 +197,7 @@ class ResourceTree {
     }
 
     disposeLoad() {
-        this.state_loaded = null;
+        this.state_loaded_latest = null;
         if (this.state_loader) {
             this.resource_type.releaseResourcePromise(this.state_loader);
             this.state_loader = null;
