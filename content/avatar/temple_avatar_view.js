@@ -28,8 +28,9 @@ class TempleAvatarView {
         var hitField = null;
         if (hit) {
             const field = hit.object.userData.field;
-            //console.assert(field);
-            hitField = field;
+            if (field && field.is_focusable) {
+                hitField = field;
+            }
         }
         if (this.centerField != hitField) {
             if (this.centerField) this.centerField.doFocusedChanged(false);

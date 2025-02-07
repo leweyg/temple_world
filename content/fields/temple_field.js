@@ -8,8 +8,6 @@ class TempleFieldBase extends ResourceTree {
         this.resourceParent = resourceParent;
         this.is_focusable = false;
     }
-
-    doFocusedChanged() {}
 };
 
 export { TempleFieldBase }
