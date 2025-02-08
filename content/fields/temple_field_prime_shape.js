@@ -5,7 +5,7 @@ import { ResourceType } from '../code/resource_tree.js';
 class TempleFieldPrimeShapeType extends ResourceType {
     static PrimType = new TempleFieldPrimeShapeType();
     makeResourcePromiseFromPath(path) {
-        const geo = new THREE.BoxGeometry(1, 1, 1);
+        const geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
         const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
         const matCentered = new THREE.MeshToonMaterial({color:0xccCCcc});
         const matHeld= new THREE.MeshToonMaterial({color:0x0000FF});
@@ -29,7 +29,7 @@ class TempleFieldPrimeShapeType extends ResourceType {
 }
 
 class TempleFieldPrimeShape extends TempleFieldBase {
-    constructor(sceneParent, resourceParent, subtype="box") {
+    constructor(sceneParent, resourceParent, subtype="plane") {
         super("primshape_" + subtype,resourceParent);
         const _this = this;
         this.is_focusable = true;
