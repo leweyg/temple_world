@@ -7,6 +7,15 @@ class TempleAvatarFocus {
         this.held = null;
     }
 
+    heldScene() {
+        if (!this.held) return null;
+        const res = this.held.res;
+        if (res) {
+            return res.latestInstance();
+        }
+        return null;
+    }
+
     ensureCentered(newCentered) {
         this.ensureFocus(this.held, newCentered);
     }

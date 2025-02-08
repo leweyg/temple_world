@@ -132,11 +132,9 @@ class TempleAvatarControls {
         const minToTurn = 0.1;
         if (motion > minToTurn) {
             this.avatar.pose.bodyPos.add(tv1);
-            if (this.avatar.focus.held) {
-                var objHeld = this.avatar.focus.held.res.latestInstance();
-                if (objHeld) {
-                    objHeld.position.add(tv1);
-                }
+            const heldScene = this.avatar.focus.heldScene();
+            if (heldScene) {
+                heldScene.position.add(tv1);
             }
             tv2.setY(0);
             tv2.normalize();
@@ -147,6 +145,9 @@ class TempleAvatarControls {
     _tq1 = new THREE.Quaternion();
     _tv1 = new THREE.Vector3();
     _tv2 = new THREE.Vector3();
+    _tvFacing = new THREE.Vector3();
+    _tqFacing = new THREE.Quaternion();
+    _tqFlatFacing = new THREE.Quaternion();
     _tvUp = new THREE.Vector3(0,1.0,0);
     _tvAcross = new THREE.Vector3(1.0,0,0);
     onUseControl_LookOrAim(control, time, isAim) {
@@ -174,32 +175,57 @@ class TempleAvatarControls {
             return;
         }
         const tq1 = this._tq1;
-        const modFacing = this.avatar.pose.viewFacing;
+        const prevFacing = this.avatar.pose.viewFacing;
+        const nxtFacing = this._tvFacing;
         const lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
+        nxtFacing.copy(prevFacing);
 
         const avatarSide = this._tv1;
         avatarSide.copy(this._tvAcross);
         this.controlSpace.localToWorld(avatarSide);
         const dy = control.unitCurrent.y * time.dt * lookSpeed * -ControlSettings.lookRateUpDown;
         tq1.setFromAxisAngle(avatarSide, dy);
-        modFacing.applyQuaternion(tq1);
+        nxtFacing.applyQuaternion(tq1);
 
         const dx = control.unitCurrent.x * time.dt * lookSpeed * -ControlSettings.lookRateSide;
         tq1.setFromAxisAngle(this._tvUp, dx);
-        modFacing.applyQuaternion(tq1);
+        nxtFacing.applyQuaternion(tq1);
         
-        var facingY = modFacing.y;
+        var facingY = nxtFacing.y;
         const maxY = 0.7;
         facingY = Math.max(-maxY, Math.min(maxY, facingY));
-        modFacing.setY(facingY);
-        modFacing.normalize();
+        nxtFacing.setY(facingY);
+        nxtFacing.normalize();
 
+        const deltaQuat = this._tqFacing;
+        deltaQuat.setFromUnitVectors(prevFacing, nxtFacing);
+
+        const deltaQuatFlat = this._tqFlatFacing;
+        const nextFacingFlat = this._tv2;
+        nextFacingFlat.copy(nxtFacing);
+        nextFacingFlat.setY(prevFacing.y);
+        deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
+
+        this.avatar.pose.viewFacing.copy(nxtFacing);
         this.avatar.pose.adjustCameraForViewFacing();
         this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimZoomScalar : 1.0;
 
         if (isAim) {
             const centered = this.avatar.view.latestCenterField();
             this.avatar.focus.ensureCentered(centered);
+        }
+        const heldScene = this.avatar.focus.heldScene();
+        if (heldScene) {
+            //heldScene.applyQuaternion(deltaQuatFlat);
+            const heldOffset = this._tv1;
+            const rotateOriginWorld = this.avatar.scene.position;
+            heldOffset.copy(heldScene.position);
+            heldScene.parent.localToWorld(heldOffset);
+            heldOffset.sub(rotateOriginWorld);
+            heldOffset.applyQuaternion(deltaQuat);
+            heldOffset.add(rotateOriginWorld);
+            heldScene.parent.worldToLocal(heldOffset);
+            heldScene.position.copy(heldOffset);
         }
     }
 }
