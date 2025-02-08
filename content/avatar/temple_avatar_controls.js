@@ -6,7 +6,7 @@ class ControlSettings {
     static lookRateUpDown = 0.5
     static lookRateSide = 0.5
     static lookRateAimScalar = 0.25
-    static aimZoomScalar = 0.5
+    static aimZoomScalar = 0.61
     static aimAnimDuration = 2.0;
 
     static speedWalk = 1.0;
