@@ -132,6 +132,12 @@ class TempleAvatarControls {
         const minToTurn = 0.1;
         if (motion > minToTurn) {
             this.avatar.pose.bodyPos.add(tv1);
+            if (this.avatar.focus.held) {
+                var objHeld = this.avatar.focus.held.res.latestInstance();
+                if (objHeld) {
+                    objHeld.position.add(tv1);
+                }
+            }
             tv2.setY(0);
             tv2.normalize();
             this.avatar.pose.bodyFacing.copy(tv2);
