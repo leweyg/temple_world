@@ -149,6 +149,20 @@ class TempleAvatarControls {
             if (isAim && (control.isStart || control.isEnd)) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+
+
+                if (control.isEnd) {
+                    var centered = this.avatar.view.latestCenterField();
+                    var held = this.avatar.focus.held;
+                    if (held) {
+                        held = null;
+                    } else {
+                        held = centered;
+                    }
+                    centered = null;
+                    this.avatar.focus.ensureFocus(held, centered);
+                }
+                
             }
             
             return;
@@ -176,6 +190,11 @@ class TempleAvatarControls {
 
         this.avatar.pose.adjustCameraForViewFacing();
         this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimZoomScalar : 1.0;
+
+        if (isAim) {
+            const centered = this.avatar.view.latestCenterField();
+            this.avatar.focus.ensureCentered(centered);
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import { TempleAvatarBody } from './temple_avatar_body.js'
 import { TempleAvatarView } from './temple_avatar_view.js'
 import { TempleAvatarControls } from './temple_avatar_controls.js';
 import { TempleAvatarPose } from './temple_avatar_pose.js'
+import { TempleAvatarFocus } from './temple_avatar_focus.js';
 
 class TempleAvatar {
 
@@ -16,6 +17,7 @@ class TempleAvatar {
         this.pose = new TempleAvatarPose(this);
         this.body = new TempleAvatarBody(this.scene);
         this.view = new TempleAvatarView(this, cameraThree);
+        this.focus = new TempleAvatarFocus(this);
         this.controls = new TempleAvatarControls(this, controlGroup);
 
         var _this = this;

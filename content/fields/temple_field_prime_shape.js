@@ -6,13 +6,15 @@ class TempleFieldPrimeShapeType extends ResourceType {
     static PrimType = new TempleFieldPrimeShapeType();
     makeResourcePromiseFromPath(path) {
         const geo = new THREE.BoxGeometry(1, 1, 1);
-        const matDef = new THREE.MeshToonMaterial({color:0x00FF00});
-        const matSel = new THREE.MeshToonMaterial({color:0xccCCcc});
+        const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
+        const matCentered = new THREE.MeshToonMaterial({color:0xccCCcc});
+        const matHeld= new THREE.MeshToonMaterial({color:0x0000FF});
         var res = {
             geo : geo,
-            mat : matDef,
-            matSel : matSel,
-            matDef : matDef,
+            mat : matDefault,
+            matDefault : matDefault,
+            matCentered : matCentered,
+            matHeld : matHeld,
         };
         return this.simplePromise(res);
     }
@@ -39,10 +41,13 @@ class TempleFieldPrimeShape extends TempleFieldBase {
         });
     }
 
-    doFocusedChanged(isFocused) {
+    doFocusedChanged(isHeld, isCentered) {
         const inst = this.res.latestInstance();
         const comn = this.res.latestLoaded();
-        inst.material = isFocused ? comn.matSel : comn.matDef;
+        if (inst && comn) {
+            inst.material = ( isHeld ? comn.matHeld : ( isCentered ? comn.matCentered : comn.matDefault ) );
+            console.assert(inst.material);
+        }
     }
 
     mainShape() {

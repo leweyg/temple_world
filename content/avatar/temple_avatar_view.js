@@ -13,6 +13,10 @@ class TempleAvatarView {
         this.centerField = null;
     }
 
+    latestCenterField() {
+        return this.centerField;
+    }
+
     postCameraMoved() {
         const world = this.avatar.world;
         const origin = this.cameraThree.position;
@@ -33,9 +37,7 @@ class TempleAvatarView {
             }
         }
         if (this.centerField != hitField) {
-            if (this.centerField) this.centerField.doFocusedChanged(false);
             this.centerField = hitField;
-            if (this.centerField) this.centerField.doFocusedChanged(true);
         }
     }
 
