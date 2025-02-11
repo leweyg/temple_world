@@ -5,6 +5,7 @@ import { TempleAvatarView } from './temple_avatar_view.js'
 import { TempleAvatarControls } from './temple_avatar_controls.js';
 import { TempleAvatarPose } from './temple_avatar_pose.js'
 import { TempleAvatarFocus } from './temple_avatar_focus.js';
+import { TempleAvatarReticle } from './temple_avatar_reticle.js';
 
 class TempleAvatar {
 
@@ -19,6 +20,7 @@ class TempleAvatar {
         this.view = new TempleAvatarView(this, cameraThree);
         this.focus = new TempleAvatarFocus(this);
         this.controls = new TempleAvatarControls(this, controlGroup);
+        this.reticle = new TempleAvatarReticle(this, cameraThree);
 
         var _this = this;
         this.world.time.listenToTime((time) => {
