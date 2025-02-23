@@ -33,7 +33,7 @@ class ResourceType {
 
 class ResourceTypeJson extends ResourceType {
     makeResourcePromiseFromPath(path) {
-        var ans = fetch(`.../get/user/by/${id}`);
+        var ans = fetch(path);
         ans = ans.then(res => res.json());
         return ans;
     }
@@ -69,6 +69,7 @@ class ResourceTypeThreeGroup extends ResourceType {
         }
     }
 }
+
 
 class ResourceHelpers {
     static removeFromArray(array, item) {
@@ -245,5 +246,5 @@ class ResourceTree {
 
 
 
-export { ResourceTree, ResourceType }
+export { ResourceTree, ResourceType, ResourceTypeJson }
 

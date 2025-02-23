@@ -5,6 +5,7 @@ import { TempleLights } from './space_lights.js'
 import { TempleSpaceKalaChakra } from './space_kalachakra.js'
 import { ResourceTree } from '../code/resource_tree.js';
 import { SpaceTrainingBoxes } from './space_training_boxes.js';
+import { SpaceEastAltar0 } from './east/altars/space_east_altar_0.js';
 
 class TempleSpace {
 
@@ -23,6 +24,9 @@ class TempleSpace {
         }, true);
         this.registerLevelByCallback("TrainingBoxes", k => {
             new SpaceTrainingBoxes(k, this.resources);
+        }, true);
+        this.registerLevelByCallback("SpaceEastAltar0", k => {
+            new SpaceEastAltar0(k, this.resources);
         }, true);
         this.ensureLevel("Floor");
         this.ensureLevel("TrainingBoxes");
