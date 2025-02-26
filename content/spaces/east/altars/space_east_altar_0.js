@@ -10,7 +10,11 @@ class SpaceEastAltar0 {
         var jsonPath = "content/spaces/east/altars/east_altar_0.json"
         resParent = new ResourceTree()
         this.inner = resParent.subResource(jsonPath, SpaceAltarShuzzle.ResourceTypeShuzzle);
-        this.inner.instanceAsync(sceneParent);
+        this.inner.instanceAsync(sceneParent).then(shuzzle => {
+            this.shuzzle = shuzzle;
+            shuzzle.scene.position.set(6.0, 0, 0);
+            shuzzle.scene.rotateOnAxis(new THREE.Vector3(0,1,0), -Math.PI/2);
+        });
     }
 
 
