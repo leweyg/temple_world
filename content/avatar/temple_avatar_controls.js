@@ -124,7 +124,7 @@ class TempleAvatarControls {
         tv1.copy( control.unitCurrent );
         var motion = tv1.length();
         tv1.set( tv1.x, 0, tv1.y );
-        const localToControl = isRun ? this.controlSpaceFly : this.controlSpace;
+        const localToControl = this.controlSpace; // isRun ? this.controlSpaceFly : this.controlSpace;
         localToControl.localToWorld(tv1);
         tv2.copy(tv1);
         const baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk
