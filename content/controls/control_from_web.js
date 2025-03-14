@@ -19,22 +19,38 @@ class ControlFromWeb {
         this.listenWith( 'pointerout', this.onPointerDone );
         this.listenWith( 'pointercancel', this.onPointerDone );
 
+        this.listenWith( 'keydown', this.onKeyDown, true );
+        this.listenWith( 'keyup', this.onKeyUp, true );
+        this.listenWith( 'focusout', this.onKeyFocusOut, true );
+
         var justPreventDefault = ((e) => {
             e.preventDefault();
           });
         this.domElement.addEventListener('contextmenu', justPreventDefault);
         this.domElement.addEventListener('touchstart', justPreventDefault);
         
+        this.keysId = "keys";
+        this.keysDirByKey = {
+            'a':new THREE.Vector3(-1, 0, 0),
+            'd':new THREE.Vector3( 1, 0, 0),
+            'w':new THREE.Vector3( 0, -1,0),
+            's':new THREE.Vector3( 0, 1, 0),
+        }
+        this.keysDown = {};
     }
 
-    listenWith(name, method) {
+    listenWith(name, method, isDocLevel=false) {
         var callback = method.bind(this);
         var _this = this;
         function pointerCallback(ev) {
             ev.preventDefault();
             callback(ev);
         };
-        this.domElement.addEventListener( name, pointerCallback );
+        if ( ! isDocLevel) {
+            this.domElement.addEventListener( name, pointerCallback );
+        } else {
+            document.addEventListener( name, pointerCallback );
+        }
     }
 
     findStreamById(id) {
@@ -133,6 +149,90 @@ class ControlFromWeb {
         // not valid: this.updateStreamFromPointer(cur, event, false, true);
         this.controlGroup.onControllerEvent(cur);
         this.controlGroup.endStream(cur);
+    }
+
+    findAnyKeyDown() {
+        for (var k in this.keysDown) {
+            if (this.keysDown[k]) {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    updateKeyState(key, isDown=false, isForce=true) {
+        key = ("" + key).toLowerCase();
+        if (key in this.keysDirByKey) {
+        } else {
+            return; // unknown key
+        }
+        var wasDown = this.keysDown[key];
+        if ((wasDown == isDown) && (!isForce)) {
+            return; // no change
+        }
+        var wasAnyDown = (this.findAnyKeyDown() != null);
+        this.keysDown[key] = isDown;
+        //console.log("Key[" + key + "]=" + isDown);
+        var isAnyDown = (this.findAnyKeyDown() != null);
+
+        var cur = this.ensureStreamById(this.keysId);
+        {
+            // update the cursor:
+            cur.rawId = this.keysId;
+            cur.isDown = isAnyDown;
+            cur.isStart = (isAnyDown && (!wasAnyDown));
+            cur.isEnd = ((!isAnyDown) && wasAnyDown);
+
+            cur.rawCurrent.set(0,0,0);
+            for (var k in this.keysDown) {
+                if (!this.keysDown[k]) continue;
+
+                var dir = this.keysDirByKey[k];
+                cur.rawCurrent.add(dir);
+            }
+            cur.unitCurrent.copy(cur.rawCurrent);
+            cur.unitLen = cur.unitCurrent.length();
+            if (cur.unitLen > 0.1) {
+                cur.unitCurrent.normalize();
+                console.assert(!cur.isEnd);
+            } else {
+                //console.assert(cur.isEnd);
+            }
+            //console.log(cur.unitCurrent.x, cur.unitCurrent.z);
+
+            // This is a equivalent touch setup:
+            cur.rawRange.set(1,1,1); // 0~1 pixel range
+            cur.rawCurrent.set(0.25, 0.75, 0.25); // bottom left corner
+            cur.rawInitial.copy(cur.rawCurrent);
+        }
+        //console.log("Start=" + cur.isStart + " End=" + cur.isEnd);
+        this.controlGroup.onControllerEvent(cur);
+        if (cur.isEnd) {
+            this.controlGroup.endStream(cur);
+        }
+    }
+
+    onKeyDown(event) {
+        var id = event.key
+        this.updateKeyState(id, true);
+    }
+
+    onKeyUp(event) {
+        var id = event.key
+        this.updateKeyState(id, false);
+    }
+
+    onKeyFocusOut(event) {
+        var didChange = null;
+        for (var k in this.keysDown) {
+            if (this.keysDown[k]) {
+                this.keysDown[k] = false;
+                didChange = k;
+            }
+        }
+        if (didChange) {
+            this.updateKeyState(didChange, false, true);
+        }
     }
 }
 
