@@ -12,7 +12,7 @@ class SpaceEastAltar0 {
         this.inner = resParent.subResource(jsonPath, SpaceAltarShuzzle.ResourceTypeShuzzle);
         this.inner.instanceAsync(sceneParent).then(shuzzle => {
             this.shuzzle = shuzzle;
-            shuzzle.scene.position.set(6.0, 0, 0);
+            shuzzle.scene.position.set(-6.0, 0.5, 0);
             shuzzle.scene.rotateOnAxis(new THREE.Vector3(0,1,0), -Math.PI/2);
         });
     }
