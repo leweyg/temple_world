@@ -6,10 +6,54 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link type="text/css" rel="stylesheet" href="three/build/main.css">
 	</head>
-
+	<style>
+		.game_canvas {
+				height:100%;
+				width: 100%;
+				top: 0;
+				left: 0;
+			}
+			.game_overlay {
+				pointer-events: none;
+				position: absolute;
+				height:100%;
+				width: 100%;
+				top:0px;
+				left:0px;
+				z-index: 10;
+			}
+			.game_overlay_quad {
+				position: absolute;
+				display: grid;
+				height:50%;
+				width: 50%;
+			}
+			.game_overlay_hint {
+				color:green;
+				font-size: small;
+			}
+	</style>
 	<body>
 		<div id="info">
-			Temple World
+			<a href="https://lewcid.com/lg/aboutme.html">Temple World</a>
+		</div>
+		<div id="main_canvas_holder">
+			<canvas id="main_canvas" class="game_canvas"></canvas>
+			<div class="game_overlay" >
+				<div class="game_overlay_quad" style="right:0px; bottom:0px;">
+					<p class="game_overlay_hint" style="text-align: right;">look</p>
+				</div>
+				<div class="game_overlay_quad" style="right:0px; top:0px;">
+					<p class="game_overlay_hint" style="align-self: end;text-align: right;">focus</p>
+				</div>
+				<div class="game_overlay_quad" style="left:0px; bottom:0px;">
+					<p class="game_overlay_hint" style="text-align: left;">move</p>
+				</div>
+				<div class="game_overlay_quad" style="left:0px; top:0px;">
+					<p class="game_overlay_hint" style="align-self: end;">glide</p>
+				</div>
+
+			</div>
 		</div>
 
 		<script type="importmap">
@@ -49,10 +93,13 @@
 			function init_three() {
 
 				// renderer
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				var targetCanvas = main_canvas;
+				renderer = new THREE.WebGLRenderer( {
+					canvas: targetCanvas,
+					antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
+				//document.body.appendChild( renderer.domElement );
 
 				// scene
 				scene = new THREE.Scene();
