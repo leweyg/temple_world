@@ -52,7 +52,9 @@
 				<div class="game_overlay_quad" style="left:0px; top:0px;">
 					<p class="game_overlay_hint" style="align-self: end;">glide</p>
 				</div>
-
+				<div class="game_overlay_quad" style="left:0px; top:30px;">
+					<code id="main-dev-console" class="game_overlay_hint" style="text-align: left;">~</code>
+				</div>
 			</div>
 		</div>
 
@@ -85,7 +87,8 @@
             }
 
 			function init_temple() {
-				templeWorldInst = new TempleWorld(scene, camera, request_redraw);
+				var devElement = document.getElementById("main-dev-console")
+				templeWorldInst = new TempleWorld(scene, camera, request_redraw, devElement);
 				var webControl = new ControlFromWeb(renderer.domElement, templeWorldInst.controlGroup );
 
 			}

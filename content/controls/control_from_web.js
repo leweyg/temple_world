@@ -36,6 +36,10 @@ class ControlFromWeb {
             'w':new THREE.Vector3( 0, -1,0),
             's':new THREE.Vector3( 0, 1, 0),
         }
+        this.keyToggles = {
+            '`':"devmenu",
+            '~':"devmenu"
+        }
         this.keysDown = {};
     }
 
@@ -162,9 +166,19 @@ class ControlFromWeb {
 
     updateKeyState(key, isDown=false, isForce=true) {
         key = ("" + key).toLowerCase();
+        var keepSignal = false;
+        var isButton = false;
+        if (key in this.keyToggles) {
+            var cur = this.ensureStreamById(this.keysId);
+            key = this.keyToggles[key];
+            keepSignal = true;
+            isButton = true;
+        }
         if (key in this.keysDirByKey) {
-        } else {
-            return; // unknown key
+            keepSignal = true;
+        }
+        if (!keepSignal) {
+            return; // ignore this key
         }
         var wasDown = this.keysDown[key];
         if ((wasDown == isDown) && (!isForce)) {
@@ -176,34 +190,34 @@ class ControlFromWeb {
         var isAnyDown = (this.findAnyKeyDown() != null);
 
         var cur = this.ensureStreamById(this.keysId);
+        
         {
             // update the cursor:
             cur.rawId = this.keysId;
             cur.isDown = isAnyDown;
             cur.isStart = (isAnyDown && (!wasAnyDown));
             cur.isEnd = ((!isAnyDown) && wasAnyDown);
+            cur.isButton = isButton;
 
             cur.rawCurrent.set(0,0,0);
-            for (var k in this.keysDown) {
-                if (!this.keysDown[k]) continue;
+            if (!isButton) {
+                for (var k in this.keysDown) {
+                    if (!this.keysDown[k]) continue;
 
-                var dir = this.keysDirByKey[k];
-                cur.rawCurrent.add(dir);
+                    var dir = this.keysDirByKey[k];
+                    cur.rawCurrent.add(dir);
+                }
+                cur.unitCurrent.copy(cur.rawCurrent);
+                cur.unitLen = cur.unitCurrent.length();
+                if (cur.unitLen > 0.1) {
+                    cur.unitCurrent.normalize();
+                    console.assert(!cur.isEnd);
+                }
+                // This is a equivalent touch setup:
+                cur.rawRange.set(1,1,1); // 0~1 pixel range
+                cur.rawCurrent.set(0.25, 0.75, 0.25); // bottom left corner
+                cur.rawInitial.copy(cur.rawCurrent);
             }
-            cur.unitCurrent.copy(cur.rawCurrent);
-            cur.unitLen = cur.unitCurrent.length();
-            if (cur.unitLen > 0.1) {
-                cur.unitCurrent.normalize();
-                console.assert(!cur.isEnd);
-            } else {
-                //console.assert(cur.isEnd);
-            }
-            //console.log(cur.unitCurrent.x, cur.unitCurrent.z);
-
-            // This is a equivalent touch setup:
-            cur.rawRange.set(1,1,1); // 0~1 pixel range
-            cur.rawCurrent.set(0.25, 0.75, 0.25); // bottom left corner
-            cur.rawInitial.copy(cur.rawCurrent);
         }
         //console.log("Start=" + cur.isStart + " End=" + cur.isEnd);
         this.controlGroup.onControllerEvent(cur);

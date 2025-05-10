@@ -18,6 +18,8 @@ class TempleAvatarControls {
     constructor(avatar, controlGroup) {
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
+        this.isDevMode = false;
+        this.isDevModeChanged = false;
 
         this.controlSpace = new THREE.Object3D();
         this.controlSpace.name = "controlSpace";
@@ -65,7 +67,7 @@ class TempleAvatarControls {
         // do processing here
         //if ((!control.isDown) && (!control.isEnd)) return;
 
-        if (control.isStart) {
+        if (control.isStart && !control.isButton) {
             console.assert(control.mode == ControllerMode.None);
             const halfRangeX = control.rawRange.x * 0.5;
             const halfRangeY = control.rawRange.y * 0.5;
@@ -83,6 +85,8 @@ class TempleAvatarControls {
                     control.mode = ControllerMode.Look;
                 }
             }
+        } else if (control.isStart && control.isButton) {
+            control.mode = ControllerMode.DevMenu;
         }
         this.onUseControl(control, null);
 
@@ -110,10 +114,19 @@ class TempleAvatarControls {
             this.onUseControl_LookOrAim(control, time, false);
         } else if (control.mode == ControllerMode.Aim) {
             this.onUseControl_LookOrAim(control, time, true);
+        } else if (control.mode == ControllerMode.DevMenu) {
+            this.onUseControl_DevMode(control);
         } else if (control.mode == ControllerMode.None) {
             // all good
         } else {
             console.log("TODO: onUseControl for '" + control.mode + "'.");
+        }
+    }
+
+    onUseControl_DevMode(control) {
+        if (control.isEnd) {
+            this.isDevMode = !this.isDevMode;
+            this.isDevModeChanged = true;
         }
     }
 

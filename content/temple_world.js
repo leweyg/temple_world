@@ -9,9 +9,10 @@ import { ResourceTree } from './code/resource_tree.js';
 
 class TempleWorld {
 
-    constructor(parentScene, cameraThree, requestRedrawCallback) {
+    constructor(parentScene, cameraThree, requestRedrawCallback, devElement) {
         this.parentScene = parentScene;
         this.requestRedrawCallback = requestRedrawCallback;
+        this.devElement = devElement;
         this.time = new TempleTime(requestRedrawCallback);
         
         ResourceTree.RequestUpdate = (() => this.time.requestUpdate());
@@ -34,8 +35,18 @@ class TempleWorld {
     onPreRender() {
         this.stats.count_renders++;
         this.time.stepTime();
+
+        if (this.avatar.controls.isDevModeChanged) {
+            this.avatar.controls.isDevModeChanged = false;
+            if (this.avatar.controls.isDevMode) {
+                this.devElement.textContent = "in dev mode";
+            } else {
+                this.devElement.textContent = "~";
+            }
+        }
     }
 
+    
 }
 
 export { TempleWorld };
