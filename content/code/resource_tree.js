@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 
 class ResourceType {
+    name="ResourceType"
     isSceneType() { return false; }
     makeResourcePromiseFromPath(path) {
         throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
@@ -32,6 +33,7 @@ class ResourceType {
 };
 
 class ResourceTypeJson extends ResourceType {
+    name="ResourceTypeJson"
     makeResourcePromiseFromPath(path) {
         var ans = fetch(path);
         ans = ans.then(res => res.json());
@@ -43,6 +45,7 @@ class ResourceTypeJson extends ResourceType {
 }
 
 class ResourceTypeThreeGroup extends ResourceType {
+    name="ResourceTypeThreeGroup"
     isSceneType() { return true; }
     makeResourcePromiseFromPath(path) {
         return new Promise((resolve) => {

@@ -5,6 +5,7 @@ import { TempleAvatar } from './avatar/temple_avatar.js'
 import { TempleSpace } from './spaces/temple_space.js'
 import { ControllerGroup } from './controls/temple_controls.js'
 import { ResourceTree } from './code/resource_tree.js';
+import { TempleReflection } from './reflect/temple_reflection.js';
 
 
 class TempleWorld {
@@ -14,6 +15,7 @@ class TempleWorld {
         this.requestRedrawCallback = requestRedrawCallback;
         this.devElement = devElement;
         this.time = new TempleTime(requestRedrawCallback);
+        this.reflector = new TempleReflection(this);
         
         ResourceTree.RequestUpdate = (() => this.time.requestUpdate());
         this.resourceRoot = new ResourceTree();
@@ -39,7 +41,7 @@ class TempleWorld {
         if (this.avatar.controls.isDevModeChanged) {
             this.avatar.controls.isDevModeChanged = false;
             if (this.avatar.controls.isDevMode) {
-                this.devElement.textContent = "in dev mode";
+                this.devElement.textContent = this.reflector.texter.drawTextReflection();
             } else {
                 this.devElement.textContent = "~";
             }
