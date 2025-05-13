@@ -36,6 +36,9 @@
 	<body style="background-color: black;">
 		<div id="info">
 			<a href="about.html">Temple World</a>
+			<span id="main-local-host-menu" style="display: none;">
+				<u onclick="mainDoRecompile()" style="color:green">(compile)</u>
+			</span>
 		</div>
 		<div id="main_canvas_holder">
 			<canvas id="main_canvas" class="game_canvas"></canvas>
@@ -64,6 +67,48 @@
 					"three": "./three/build/three.module.js"
 				}
 			}
+		</script>
+
+		<script>
+			function IsLocalHost() {
+				if (window.location.href.includes("localhost:")) {
+					return true;
+				}
+				return false;
+			}
+			function CheckLocalHost() {
+				if (IsLocalHost()) {
+					var el = document.getElementById("main-local-host-menu");
+					el.style.display = 'inline';
+				}
+			}
+			CheckLocalHost();
+
+			function mainDoRecompile() {
+				//alert("About to recompile...");
+				fetch('src/browser/recompile.php')
+				.then(res => res.text())
+				.then(txt => {
+					if (txt.trim() == "") {
+						window.location.reload();
+					} else {
+						alert("Recompile:\n" + txt);
+					}
+				});
+			}
+		</script>
+
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { Greeter } from './content/dist/browser/ts/greeter.js'
+			var g = new Greeter("TestMsg");
+			var msg = g.greet()
+			console.log(msg);
+			//alert(msg);
+
 		</script>
 
 		<script type="module">
