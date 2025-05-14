@@ -8,15 +8,23 @@ import { ResourceTree } from './code/resource_tree.js';
 import { TempleReflection } from './reflect/temple_reflection.js';
 
 
-export class TempleWorld {
-    parentScene : THREE.Group;
+class TempleWorld {
+    time : TempleTime;
+    space : TempleSpace;
+    avatar : TempleAvatar;
+    controlGroup : ControllerGroup;
+
+    stats : TempleWorldStats;
+
+    parentScene : THREE.Object3D;
     requestRedrawCallback : ()=>void;
     devElement : HTMLElement;
-    time : TempleTime;
     reflector : TempleReflection;
+    resourceRoot : ResourceTree;
+    worldScene : THREE.Object3D;
 
     constructor(
-        parentScene:THREE.Group, 
+        parentScene:THREE.Object3D, 
         cameraThree:THREE.Camera, 
         requestRedrawCallback:()=>void,
         devElement:HTMLElement
@@ -39,9 +47,7 @@ export class TempleWorld {
         this.controlGroup = new ControllerGroup();
         this.avatar = new TempleAvatar(this, cameraThree, this.controlGroup);
 
-        this.stats = {
-            count_renders : 0,
-        };
+        this.stats = new TempleWorldStats();
     }
 
     onPreRender() {
@@ -59,6 +65,10 @@ export class TempleWorld {
     }
 
     
+}
+
+class TempleWorldStats {
+    count_renders : number = 0;
 }
 
 export { TempleWorld };

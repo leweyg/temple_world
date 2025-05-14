@@ -6,10 +6,24 @@ import { TempleAvatarControls } from './temple_avatar_controls.js';
 import { TempleAvatarPose } from './temple_avatar_pose.js'
 import { TempleAvatarFocus } from './temple_avatar_focus.js';
 import { TempleAvatarReticle } from './temple_avatar_reticle.js';
+import { TempleWorld } from '../temple_world.js';
+import { ControllerGroup } from '../controls/temple_controls.js';
 
 class TempleAvatar {
+    world : TempleWorld;
+    scene : THREE.Object3D;
 
-    constructor(world, cameraThree, controlGroup) {
+    pose : TempleAvatarPose;
+    body : TempleAvatarBody;
+    view : TempleAvatarView;
+    focus : TempleAvatarFocus;
+    controls : TempleAvatarControls;
+    reticle : TempleAvatarReticle;
+
+    constructor(world:TempleWorld, 
+        cameraThree:THREE.Camera,
+        controlGroup:ControllerGroup) {
+
         this.world = world;
         this.scene = new THREE.Group();
         this.scene.name = "TempleAvatar";

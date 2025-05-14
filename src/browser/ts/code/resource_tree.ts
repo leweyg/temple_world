@@ -9,38 +9,68 @@
 
 import * as THREE from 'three';
 
+class ResourceData {
+    source_type : ResourceType;
+    data : any = null;
+
+    constructor(source_type:ResourceType, data:any) {
+        this.source_type = source_type;
+        this.data = data;
+    }
+}
+
+class ResourceInstance {
+    src_data !: ResourceData;
+    inst : any;
+
+    constructor(src_data:ResourceData, inst: any) {
+        this.src_data = src_data;
+        this.inst = inst;
+    }
+}
+
 class ResourceType {
     name="ResourceType"
 
     isSceneType() { return false; }
-    makeResourcePromiseFromPath(path:string) {
+    thisResourceType():ResourceType { return this; }
+    makeResourcePromiseFromPath(path:string)
+        :Promise<ResourceData> {
         throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
     }
-    makeResourceInstanceFromLoaded(res:ResourceTree, parent, parentRes) {
+    makeResourceInstanceFromLoaded(
+        res:ResourceData,
+        parent:THREE.Object3D,
+        parentRes:ResourceTree)
+        :Promise<ResourceInstance>{
         throw "NotOverloaded: ResourceType.doResourceInstance";
     }
-    releaseResourceInstance(inst) {
+    releaseResourceInstance(inst:ResourceInstance) {
         throw "NotOverloaded: ResourceType.releaseResourceInstance";
     }
-    releaseResourcePromise(loader) {
+    releaseResourcePromise(data:ResourceData) {
         // usually empty nullify
     }
-    simplePromise(val) {
-        return new Promise((resolve) => {
-            resolve(val);
-        });
+    simplePromise<T>(value: T): Promise<T> {
+        return Promise.resolve(value) as Promise<T>;
     }
 
 };
 
 class ResourceTypeJson extends ResourceType {
     name="ResourceTypeJson"
-    override makeResourcePromiseFromPath(path:string) {
-        var ans = fetch(path);
-        ans = ans.then(res => res.json());
+    override makeResourcePromiseFromPath(path:string)
+        : Promise<ResourceData> {
+        var rt = this.thisResourceType();
+        var ans = fetch(path)
+            .then(res => res.json())
+            .then(res => new ResourceData(rt,res));
         return ans;
     }
-    override makeResourceInstanceFromLoaded(res, parent, parentRes) {
+    override makeResourceInstanceFromLoaded(
+        res:ResourceData,
+        parent:THREE.Object3D,
+        parentRes:ResourceTree) {
         throw "TODO";
     }
 }
@@ -91,6 +121,8 @@ class ResourceTree {
     tree_parent : ResourceTree|null = null;
     tree_children : Array<ResourceTree> = [];
 
+    state_disposed = false;
+
     constructor(path:string=ResourceTree.NameDefault, resource_type=ResourceTree.TypeGeneric) {
         // Resource:
         this.resource_path = path;
@@ -109,10 +141,7 @@ class ResourceTree {
     static TypeJson = new ResourceTypeJson();
     static RequestUpdate = (() => {});
 
-    latestLoaded() { return this.state_loaded_latest; }
-    latestInstance() { return this.state_instance_latest; }
-
-    subResource(path, type=ResourceTree.TypeGeneric) {
+    subResource(path:string, type=ResourceTree.TypeGeneric):ResourceTree {
         console.assert(!this.state_disposed);
         var existing = this.resourceFindByPath(path);
         if (existing) return existing;
@@ -122,7 +151,7 @@ class ResourceTree {
     // Creates a scene-typed resource
     //  If a parent is given, the resource is instantiated
     //  If a callback is given, it is passed the created scene
-    subResourceScene(name, parent=null, callback=null) {
+    subResourceScene(name:string, parent=null, callback=null) {
         var res = this.resourceFindByPath(name);
         if (res) return res;
 
@@ -222,8 +251,7 @@ class ResourceTree {
         this.disposeTree();
     }
 
-    resourceFindByPath(path, lookUp=true) {
-        console.assert(path);
+    resourceFindByPath(path:string, lookUp=true):ResourceTree|null {
         if (this.resource_path == path) {
             return this;
         }
@@ -235,10 +263,10 @@ class ResourceTree {
             var ans = child.resourceFindByPath(path, false);
             if (ans) return ans;
         }
-        return undefined;
+        return null;
     }
 
-    resourceAddChildByPath(path, type=ResourceTree.TypeGeneric) {
+    resourceAddChildByPath(path:string, type=ResourceTree.TypeGeneric):ResourceTree {
         console.assert(!this.resourceFindByPath(path,false));
         var res = new ResourceTree(path, type);
         res.tree_parent = this;

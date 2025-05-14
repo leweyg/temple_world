@@ -2,13 +2,40 @@ import * as THREE from 'three';
 import { CachedAlloc } from './code/cachealloc.js'
 
 class TempleTime {
-    constructor(requestRedrawCallback) {
+    requestRedrawCallback : ()=>void;
+    timeUsers : CachedAlloc<TimeUser>;
+    realtimeUsers : CachedAlloc<RealtimeUser>;
+
+    timeWallStarted: number;
+    timeWallPrevious : number;
+    timeWallStep : number;
+    realDt : number;
+
+    timeVirtualRate : number;
+    timeVirtualStarted : number;
+    timeVirtualStep : number;
+    dt : number;
+    timeVirtualCurrent : number;
+    timeVirtualPrevious : number;
+
+    timeCallbacks : Array<()=>void>;
+    updateIsRequested : boolean;
+    updateHzMax : number;
+    updateRealtimeCountdown : number;
+    updateCallbackInternal : ()=>void;
+
+
+    constructor(requestRedrawCallback : ()=>void) {
 
         this.requestRedrawCallback = requestRedrawCallback;
 
         var _this = this;
-        this.timeUsers = new CachedAlloc(() => new TimeUser(_this));
-        this.realtimeUsers = new CachedAlloc(() => new RealtimeUser(_this));
+        this.timeUsers = new CachedAlloc<TimeUser>(
+            () => new TimeUser(_this),
+            (tu:TimeUser) => tu.resetTimeUser());
+        this.realtimeUsers = new CachedAlloc<RealtimeUser>(
+            () => new RealtimeUser(_this),
+            (tu:RealtimeUser)=>{} );
 
         this.timeWallStarted = TempleTime.timeNowSeconds();
         this.timeWallPrevious = this.timeWallStarted;
@@ -47,13 +74,13 @@ class TempleTime {
         setTimeout(this.updateCallbackInternal, minTimeoutMS);
     }
 
-    listenToTime(callback) {
+    listenToTime(callback:()=>void) {
         var listner = this.timeUsers.alloc();
         listner.callback = callback;
         return listner;
     }
 
-    listenInRealtime(callback) {
+    listenInRealtime(callback:()=>void) {
         var listner = this.realtimeUsers.alloc();
         listner.callback = callback;
         return listner;
@@ -119,16 +146,20 @@ class TempleTime {
         for (var i in this.realtimeUsers.active) {
             var tl = this.realtimeUsers.active[i];
             if (tl.callback) {
-                tl.callback(this);
+                tl.callback();
             }
         }
         for (var i in this.timeUsers.active) {
-            var tl = this.timeUsers.active[i];
-            tl.callback(this);
+            var tr = this.timeUsers.active[i];
+            tr.callback();
         }
     }
 
-    fadeFloatRealTime(from, to, distPerSecond=1.0) {
+    static mathSign(x:number):number {
+        return ((x>=0.0)?1.0:-1.0);
+    }
+
+    fadeFloatRealTime(from:number, to:number, distPerSecond=1.0):number {
         const dt = this.realDt;
         const maxChange = dt * distPerSecond;
         const curChange = (to - from);
@@ -136,7 +167,7 @@ class TempleTime {
         if (absChange < maxChange) {
             return to;
         } else {
-            const dv = maxChange * Math.sign( curChange );
+            const dv = maxChange * TempleTime.mathSign( curChange );
             return from + dv;
         }
     }
@@ -152,11 +183,19 @@ class TempleTime {
 
 
 class TimeUser {
-    constructor(timer) {
+    name : string;
+    timer:TempleTime;
+    isTimeUser : boolean;
+    callback : ()=>void;
+
+    constructor(timer:TempleTime) {
         this.isTimeUser = true;
         this.timer = timer;
         this.name = "unnamed";
-        this.callback = null;
+        this.callback = ()=>{};
+    }
+    resetTimeUser() {
+
     }
     dispose() {
         this.timer.timeUsers.free(this);
@@ -164,11 +203,16 @@ class TimeUser {
 };
 
 class RealtimeUser {
-    constructor(timer) {
+    name : string;
+    isRealtimeUser : boolean;
+    timer : TempleTime;
+    callback : ()=>void;
+
+    constructor(timer : TempleTime) {
         this.isRealtimeUser = true;
         this.timer = timer;
         this.name = "unnamed";
-        this.callback = null;
+        this.callback =  ()=>{};
     }
     dispose() {
         this.timer.realtimeUsers.free(this);
