@@ -1,60 +1,101 @@
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 import * as THREE from 'three';
 import { TempleFieldBase } from './temple_field.js';
-import { ResourceType } from '../code/resource_tree.js';
-
-class TempleFieldPrimeShapeType extends ResourceType {
-    static PrimType = new TempleFieldPrimeShapeType();
-    makeResourcePromiseFromPath(path) {
-        const geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
-        const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
-        const matCentered = new THREE.MeshToonMaterial({color:0xccCCcc});
-        const matHeld= new THREE.MeshToonMaterial({color:0x0000FF});
+import { ResourceType, ResourceData, ResourceInstance } from '../code/resource_tree.js';
+var TempleFieldGeoData = /** @class */ (function () {
+    function TempleFieldGeoData(geo, mat, matDefault, matCentered, matHeld) {
+        this.geo = geo;
+        this.mat = mat;
+        this.matDefault = matDefault;
+        this.matCentered = matCentered;
+        this.matHeld = matHeld;
+    }
+    return TempleFieldGeoData;
+}());
+var TempleFieldPrimeShapeType = /** @class */ (function (_super) {
+    __extends(TempleFieldPrimeShapeType, _super);
+    function TempleFieldPrimeShapeType() {
+        var _this_1 = _super.call(this) || this;
+        _this_1.name = "TempleFieldPrimeShapeType";
+        return _this_1;
+    }
+    TempleFieldPrimeShapeType.prototype.makeResourcePromiseFromPath = function (resTree) {
+        var geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
+        var matDefault = new THREE.MeshToonMaterial({ color: 0x00FF00 });
+        var matCentered = new THREE.MeshToonMaterial({ color: 0xccCCcc });
+        var matHeld = new THREE.MeshToonMaterial({ color: 0x0000FF });
         var res = {
-            geo : geo,
-            mat : matDefault,
-            matDefault : matDefault,
-            matCentered : matCentered,
-            matHeld : matHeld,
+            geo: geo,
+            mat: matDefault,
+            matDefault: matDefault,
+            matCentered: matCentered,
+            matHeld: matHeld,
         };
-        return this.simplePromise(res);
-    }
-    makeResourceInstanceFromLoaded(res, parent, parentRes) {
-        const inst = new THREE.Mesh(res.geo, res.mat);
+        var resInst = new ResourceData(this.thisResourceType(), res, resTree);
+        return this.simplePromise(resInst);
+    };
+    TempleFieldPrimeShapeType.prototype.makeResourceInstanceFromLoaded = function (resData, parent) {
+        var res = resData.data;
+        var inst = new THREE.Mesh(res.geo, res.mat);
         parent.add(inst);
-        return this.simplePromise( inst );
-    }
-    releaseResourceInstance(inst) {
-        inst.parent.remove(inst);
-    }
-}
-
-class TempleFieldPrimeShape extends TempleFieldBase {
-    constructor(sceneParent, resourceParent, subtype="plane") {
-        super("primshape_" + subtype,resourceParent);
-        const _this = this;
-        this.is_focusable = true;
-        this.res = this.resourceParent.subResource(subtype, TempleFieldPrimeShapeType.PrimType);
-        resourceParent.instanceAsync(sceneParent).then(parentScene => {
-            _this.res.instanceAsync(parentScene).then(meshInst => {
-                meshInst.userData.field = _this;
+        var resInst = ResourceInstance.fromObject3D(inst, resData);
+        return this.simplePromise(resInst);
+    };
+    TempleFieldPrimeShapeType.prototype.releaseResourceInstance = function (resInst) {
+        var _a;
+        var inst = resInst.asObject3D();
+        (_a = inst.parent) === null || _a === void 0 ? void 0 : _a.remove(inst);
+    };
+    TempleFieldPrimeShapeType.PrimType = new TempleFieldPrimeShapeType();
+    return TempleFieldPrimeShapeType;
+}(ResourceType));
+var TempleFieldPrimeShape = /** @class */ (function (_super) {
+    __extends(TempleFieldPrimeShape, _super);
+    function TempleFieldPrimeShape(sceneParent, resourceParent, subtype) {
+        if (subtype === void 0) { subtype = "plane"; }
+        var _this_1 = _super.call(this, "primshape_" + subtype, resourceParent, TempleFieldPrimeShapeType.PrimType) || this;
+        _this_1.sceneParent = sceneParent;
+        var _this = _this_1;
+        _this_1.is_focusable = true;
+        _this_1.res = _this_1.resourceParent.subResource(subtype, TempleFieldPrimeShapeType.PrimType);
+        resourceParent.instanceAsync(sceneParent).then(function (parentScene) {
+            _this.res.instanceAsync(sceneParent).then(function (meshInst) {
+                meshInst.asObject3D().userData.field = _this;
             });
         });
+        return _this_1;
     }
-
-    doFocusedChanged(isHeld, isCentered) {
-        const inst = this.res.latestInstance();
-        const comn = this.res.latestLoaded();
+    TempleFieldPrimeShape.prototype.doFocusedChanged = function (isHeld, isCentered) {
+        var _a, _b;
+        var inst = (_a = this.res.latestInstance()) === null || _a === void 0 ? void 0 : _a.asObject3D();
+        var comn = (_b = this.res.latestLoaded()) === null || _b === void 0 ? void 0 : _b.data;
         if (inst && comn) {
-            inst.material = ( isHeld ? comn.matHeld : ( isCentered ? comn.matCentered : comn.matDefault ) );
-            console.assert(inst.material);
+            inst.material = (isHeld ? comn.matHeld : (isCentered ? comn.matCentered : comn.matDefault));
+            //console.assert(inst.material);
         }
-    }
-
-    mainShape() {
-        var shape = this.res.instanceTrySync();
-        console.assert(shape);
-        return shape;
-    }
-};
-
-export { TempleFieldPrimeShape }
+    };
+    TempleFieldPrimeShape.prototype.mainShape = function () {
+        var shape = this.res.instanceTrySync(this.sceneParent);
+        if (shape) {
+            return shape.asObject3D();
+        }
+        throw "No shape allocated yet";
+    };
+    return TempleFieldPrimeShape;
+}(TempleFieldBase));
+;
+export { TempleFieldPrimeShape, TempleFieldGeoData };

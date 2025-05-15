@@ -1,32 +1,40 @@
-
-class TempleReflectionText {
-    constructor(reflector) {
+var RefInst = /** @class */ (function () {
+    function RefInst() {
+        this.name = "";
+        this.children = [];
+    }
+    return RefInst;
+}());
+var TempleReflectionText = /** @class */ (function () {
+    function TempleReflectionText(reflector) {
+        this.isTempleReflectionText = true;
         this.reflector = reflector;
         this.isTempleReflectionText = true;
     }
-
-    drawTextReflection() {
+    TempleReflectionText.prototype.drawTextReflection = function () {
         var world = this.reflector.world;
         var reses = this.objPrintResourceRecursive(world.resourceRoot);
         var scenes = this.objPrintScene(world.parentScene);
         var whole = {
-            name:"resources/scenes",
-            children:[
+            name: "resources/scenes",
+            children: [
                 reses,
                 scenes,
             ]
-        }
+        };
         return this.textFromNameTree(whole);
-    }
-
-    textFromNameTree(obj, tabs=0, skipPrefix=false) {
+    };
+    TempleReflectionText.prototype.textFromNameTree = function (obj, tabs, skipPrefix) {
+        if (tabs === void 0) { tabs = 0; }
+        if (skipPrefix === void 0) { skipPrefix = false; }
         var line = "";
-        for (var ti=0; ti<tabs && !skipPrefix; ti++) {
+        for (var ti = 0; ti < tabs && !skipPrefix; ti++) {
             line += "  ";
         }
         if (obj.name) {
             line += obj.name;
-        } else {
+        }
+        else {
             line += "(unnamed)";
         }
         if (obj.type) {
@@ -35,32 +43,31 @@ class TempleReflectionText {
         if (obj.children && obj.children.length) {
             if (obj.children.length == 1) {
                 line += " / ";
-                line += this.textFromNameTree(obj.children[0], tabs+1, true)
-            } else {
-                for (var i=0; i<obj.children.length; i++) {
+                line += this.textFromNameTree(obj.children[0], tabs + 1, true);
+            }
+            else {
+                for (var i = 0; i < obj.children.length; i++) {
                     var child = obj.children[i];
-                    line += "\n" + this.textFromNameTree(child, tabs+1);
+                    line += "\n" + this.textFromNameTree(child, tabs + 1);
                 }
             }
         }
         return line;
-    }
-
-    objPrintResourceRecursive(resTree) {
-        var ans = {
-            name:resTree.resource_path + " <" + resTree.resource_type.name + ">",
-            children:[],
-        }
+    };
+    TempleReflectionText.prototype.objPrintResourceRecursive = function (resTree) {
+        var ans = new RefInst();
+        ans.name = resTree.resource_path + " <" + resTree.resource_type.name + ">",
+            ans.children = [];
         for (var ci in resTree.tree_children) {
             var child = resTree.tree_children[ci];
-            ans.children.push(this.objPrintResourceRecursive(child));
+            var ca = this.objPrintResourceRecursive(child);
+            ans.children.push(ca);
         }
         return ans;
-    }
-
-    objPrintScene(node) {
+    };
+    TempleReflectionText.prototype.objPrintScene = function (node) {
         return node;
-    }
-}
-
-export { TempleReflectionText }
+    };
+    return TempleReflectionText;
+}());
+export { TempleReflectionText };

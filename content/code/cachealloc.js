@@ -1,43 +1,39 @@
-
-
-class CachedAlloc {
-    constructor(allocCallback, resetCallback) {
+var CachedAlloc = /** @class */ (function () {
+    function CachedAlloc(allocCallback, resetCallback) {
+        this.active = [];
+        this.cached = [];
         this.allocCallback = allocCallback;
         this.resetCallback = resetCallback;
         this.active = [];
         this.cached = [];
     }
-    isEmpty() {
+    CachedAlloc.prototype.isEmpty = function () {
         return (this.active.length == 0);
-    }
-    alloc() {
-        var cur = this.ensureAllocStream();
+    };
+    CachedAlloc.prototype.alloc = function () {
+        var cur = this.internalAlloc();
         if (this.resetCallback) {
             this.resetCallback(cur);
         }
-        console.assert(!cur.isActive);
-        cur.isActive = true;
         this.active.push(cur);
         return cur;
-    }
-    free(cur) {
-        console.assert(cur.isActive);
-        cur.isActive = false;
+    };
+    CachedAlloc.prototype.free = function (cur) {
         var ndx = this.active.indexOf(cur);
         console.assert(ndx >= 0);
         this.active.splice(ndx, 1);
         ndx = this.active.indexOf(cur);
         console.assert(ndx < 0);
         this.cached.push(cur);
-    }
-    ensureAllocStream() {
+    };
+    CachedAlloc.prototype.internalAlloc = function () {
         if (this.cached.length > 0) {
             var cur = this.cached.pop();
             return cur;
         }
-        var cur = this.allocCallback();
-        return cur;
-    }
-};
-
-export { CachedAlloc }
+        return this.allocCallback();
+    };
+    return CachedAlloc;
+}());
+;
+export { CachedAlloc };

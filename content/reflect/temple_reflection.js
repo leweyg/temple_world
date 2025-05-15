@@ -1,12 +1,11 @@
-
 import { TempleReflectionText } from "./temple_reflection_text.js";
-
-class TempleReflection {
-    constructor(world) {
+var TempleReflection = /** @class */ (function () {
+    function TempleReflection(world) {
+        this.isTempleReflection = true;
         this.world = world;
         this.isTempleReflection = true;
         this.texter = new TempleReflectionText(this);
-    }   
-}
-
-export { TempleReflection }
+    }
+    return TempleReflection;
+}());
+export { TempleReflection };

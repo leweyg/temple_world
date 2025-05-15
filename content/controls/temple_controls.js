@@ -1,28 +1,42 @@
-
 import * as THREE from 'three';
-import { CachedAlloc } from '../code/cachealloc.js'
-
-class ControllerPhase {
-    static None = "None";
-    static Hold = "Hold";
-    static Tap = "Tap";
-    static LongPress = "LongPress";
-    static LongTap = "LongTap";
-    static Across = "Across";
-};
-
-class ControllerMode {
-    static None = "None";
-    static Walk = "Walk";
-    static Run = "Run";
-    static Look = "Look";
-    static Aim = "Aim";
-    static DevMenu = "DevMenu";
-};
-
-class ControllerStream {
-    constructor() {
+import { CachedAlloc } from '../code/cachealloc.js';
+var ControllerPhase = /** @class */ (function () {
+    function ControllerPhase() {
+    }
+    ControllerPhase.None = "None";
+    ControllerPhase.Hold = "Hold";
+    ControllerPhase.Tap = "Tap";
+    ControllerPhase.LongPress = "LongPress";
+    ControllerPhase.LongTap = "LongTap";
+    ControllerPhase.Across = "Across";
+    return ControllerPhase;
+}());
+;
+var ControllerMode = /** @class */ (function () {
+    function ControllerMode() {
+    }
+    ControllerMode.None = "None";
+    ControllerMode.Walk = "Walk";
+    ControllerMode.Run = "Run";
+    ControllerMode.Look = "Look";
+    ControllerMode.Aim = "Aim";
+    ControllerMode.DevMenu = "DevMenu";
+    return ControllerMode;
+}());
+;
+var ControllerStream = /** @class */ (function () {
+    function ControllerStream() {
         this.isControllerStream = true;
+        this.unitLen = 0;
+        this.isActive = false;
+        this.isStart = false;
+        this.isEnd = false;
+        this.isDown = false;
+        this.isButton = false;
+        this.phase = ControllerPhase.None;
+        this.mode = ControllerMode.None;
+        this.rawLengthPath = 0;
+        this.rawLengthCurrent = 0;
         this.rawId = -1;
         this.resetStream();
         this.rawInitial = new THREE.Vector3();
@@ -33,7 +47,7 @@ class ControllerStream {
         this.unitInitial = new THREE.Vector3();
         this.unitCurrent = new THREE.Vector3();
     }
-    resetStream() {
+    ControllerStream.prototype.resetStream = function () {
         this.isActive = false;
         this.isStart = false;
         this.isEnd = false;
@@ -42,40 +56,38 @@ class ControllerStream {
         this.mode = ControllerMode.None;
         this.rawLengthPath = 0;
         this.rawLengthCurrent = 0;
-    }
-}
-
-class ControllerGroup {
-    constructor() {
+    };
+    return ControllerStream;
+}());
+var ControllerGroup = /** @class */ (function () {
+    function ControllerGroup() {
         this.isControllerGroup = true;
-        this.cache = new CachedAlloc(
-            () => new ControllerStream(),
-            (resetMe) => resetMe.resetStream());
+        this.isControllerGroup = true;
+        this.cache = new CachedAlloc(function () { return new ControllerStream(); }, function (resetMe) { return resetMe.resetStream(); });
         this.callbacks = [];
     }
-    getActives() {
+    ControllerGroup.prototype.getActives = function () {
         return this.cache.active;
-    }
-    beginStream() {
+    };
+    ControllerGroup.prototype.beginStream = function () {
         var stream = this.cache.alloc();
         //stream.resetStream();
         return stream;
-    }
-    endStream(str) {
+    };
+    ControllerGroup.prototype.endStream = function (str) {
         console.assert(str.isControllerStream);
         this.cache.free(str);
-    }
-    onControllerEvent(cntrl) {
+    };
+    ControllerGroup.prototype.onControllerEvent = function (cntrl) {
         for (var i in this.callbacks) {
             var cb = this.callbacks[i];
             cb(cntrl);
         }
-    }
-    listenControllerEvent(callback) {
+    };
+    ControllerGroup.prototype.listenControllerEvent = function (callback) {
         this.callbacks.push(callback);
-    }
-};
-
-export {
-    ControllerGroup, ControllerStream,
-    ControllerPhase, ControllerMode };
+    };
+    return ControllerGroup;
+}());
+;
+export { ControllerGroup, ControllerStream, ControllerPhase, ControllerMode };

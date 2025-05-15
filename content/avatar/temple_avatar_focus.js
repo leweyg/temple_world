@@ -1,26 +1,23 @@
-
-class TempleAvatarFocus {
-    constructor(avatar) {
+var TempleAvatarFocus = /** @class */ (function () {
+    function TempleAvatarFocus(avatar) {
+        //this.avatar = avatar;
         this.avatar = avatar;
-
         this.centered = null;
         this.held = null;
     }
-
-    heldScene() {
-        if (!this.held) return null;
-        const res = this.held.res;
+    TempleAvatarFocus.prototype.heldScene = function () {
+        if (!this.held)
+            return null;
+        var res = this.held.latestInstance();
         if (res) {
-            return res.latestInstance();
+            return res.asObject3D();
         }
         return null;
-    }
-
-    ensureCentered(newCentered) {
+    };
+    TempleAvatarFocus.prototype.ensureCentered = function (newCentered) {
         this.ensureFocus(this.held, newCentered);
-    }
-
-    ensureFocus(newHeld, newCentered) {
+    };
+    TempleAvatarFocus.prototype.ensureFocus = function (newHeld, newCentered) {
         if ((this.held == newHeld) && (this.centered == newCentered)) {
             return;
         }
@@ -30,15 +27,17 @@ class TempleAvatarFocus {
         if (newCentered) {
             console.assert(newCentered.is_focusable);
         }
-
-        if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
-        if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
+        if (this.held)
+            this.held.doFocusedChanged(this.held == newHeld, this.held == newCentered);
+        if (this.centered)
+            this.centered.doFocusedChanged(this.centered == newHeld, this.centered == newCentered);
         this.held = newHeld;
         this.centered = newCentered;
-        if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
-        if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
-        
-    }
-}
-
-export { TempleAvatarFocus }
+        if (this.held)
+            this.held.doFocusedChanged(this.held == newHeld, this.held == newCentered);
+        if (this.centered)
+            this.centered.doFocusedChanged(this.centered == newHeld, this.centered == newCentered);
+    };
+    return TempleAvatarFocus;
+}());
+export { TempleAvatarFocus };
