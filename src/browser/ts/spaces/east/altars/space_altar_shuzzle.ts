@@ -5,6 +5,7 @@ import { ResourceTree, ResourceTypeJson, ResourceData, ResourceInstance } from '
 class SpaceAltarShuzzleInstance {
     scene : THREE.Object3D;
     lines : THREE.Line|null = null;
+    isSpaceAltarShuzzleInstance : boolean = true;
 
     constructor(res:any, parent:THREE.Object3D, parentRes:ResourceTree) {
         const name = Object.keys(res)[0];
@@ -88,10 +89,9 @@ class SpaceAltarShuzzle extends ResourceTypeJson {
         var nameStr = Object.keys(res)[0];
         var data = res[nameStr];
         var state = new SpaceAltarShuzzleInstance(res, parent, resData.res);
-        var inst = new ResourceInstance(state.scene, resData, resData.res);
-        inst.isObject3D = true;
+        var inst = new ResourceInstance(state, resData, resData.res);
         return this.simplePromise(inst);
     }
 }
 
-export { SpaceAltarShuzzle };
+export { SpaceAltarShuzzle, SpaceAltarShuzzleInstance };

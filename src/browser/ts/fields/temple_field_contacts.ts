@@ -1,17 +1,27 @@
 import * as THREE from 'three';
+import { TempleWorld } from '../temple_world';
 
 class TempleFieldContacts {
-    constructor(world) {
-        this.world = world;
+    constructor(public world : TempleWorld) {
     }
 
-    updateNearestContactSync(world) {
+    updateNearestContactSync(world:TempleWorld) {
         throw "Not implimented.";
     }
 };
 
 class TempleFieldContactsRay extends TempleFieldContacts {
-    constructor(world) {
+    origin : THREE.Vector3;
+    direction : THREE.Vector3;
+    min_distance = 0.01;
+    max_distance = 1000.0;
+    raycaster : THREE.Raycaster;
+    hit_now = false;
+    hit_pos : THREE.Vector3;
+    possibles : Array<THREE.Object3D> = [];
+    intersects : Array<THREE.Intersection<THREE.Object3D>> = [];
+    
+    constructor(world:TempleWorld) {
         super(world);
         this.origin = new THREE.Vector3();
         this.direction = new THREE.Vector3(0,-1.0,0);
@@ -20,22 +30,25 @@ class TempleFieldContactsRay extends TempleFieldContacts {
         this.raycaster = new THREE.Raycaster();
         this.hit_now = false;
         this.hit_pos = new THREE.Vector3();
-        this.possibles = [null];
+        this.possibles = [];
         this.intersects = [];
     }
 
-    updateNearestContactSync(world) {
+    updateNearestContactSync(world:TempleWorld) {
         if (!this.world) {
             if (world) {
                 this.world = world;
             }
         }
-        console.assert(this.world);
+        //console.assert(this.world);
         this.raycaster.near = this.min_distance;
         this.raycaster.far = this.max_distance;
         this.raycaster.set(this.origin, this.direction);
         this.raycaster.far = this.max_distance;
         this.intersects.length = 0;
+        if (this.possibles.length == 0) {
+            this.possibles = [ this.world.worldScene ];
+        }
         this.possibles[0] = this.world.worldScene;
         const intersects = this.raycaster.intersectObjects( this.possibles, true, this.intersects );
         console.assert(intersects == this.intersects);

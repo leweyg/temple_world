@@ -3,7 +3,7 @@ import { TempleReflection } from "./temple_reflection";
 import * as THREE from 'three';
 
 class RefInst {
-    name:string;
+    name:string="";
     children:Array<RefInst> = [];
 }
 

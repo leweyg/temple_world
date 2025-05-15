@@ -31,6 +31,11 @@ class ResourceInstance {
         this.res_data = src_data;
         this.inst_data = inst;
     }
+    static fromObject3D(obj:THREE.Object3D,src_data:ResourceData):ResourceInstance {
+        var inst = new ResourceInstance(obj, src_data, src_data.res);
+        inst.isObject3D = true;
+        return inst;
+    }
     asObject3D() : THREE.Object3D {
         console.assert(this.isObject3D);
         return this.inst_data as THREE.Object3D;
@@ -101,7 +106,7 @@ class ResourceTypeThreeGroup extends ResourceType {
             parent.add(obj);
             ResourceTree.RequestUpdate();
         }
-        const inst = new ResourceInstance(obj, res, res.res);
+        const inst = ResourceInstance.fromObject3D(obj, res);
         inst.isObject3D = true;
         return new Promise((resolve) => {
             resolve(inst);
@@ -148,6 +153,7 @@ class ResourceTree {
     state_instance_latest : ResourceInstance|null;
     state_instancer : Promise<ResourceInstance>|null;
 
+
     constructor(path:string=ResourceTree.NameDefault, resource_type=ResourceTree.TypeGeneric) {
         // Resource:
         this.resource_path = path;
@@ -165,6 +171,9 @@ class ResourceTree {
     static TypeThreeGroup = new ResourceTypeThreeGroup();
     static TypeJson = new ResourceTypeJson();
     static RequestUpdate = (() => {});
+
+    latestInstance() : ResourceInstance|null { return this.state_instance_latest; }
+    latestLoaded() : ResourceData|null { return this.state_loaded_latest; }
 
     subResource(path:string, type=ResourceTree.TypeGeneric):ResourceTree {
         console.assert(!this.state_disposed);
