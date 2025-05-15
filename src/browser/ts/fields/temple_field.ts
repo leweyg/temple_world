@@ -11,6 +11,9 @@ class TempleFieldBase extends ResourceTree {
         this.resourceParent = resourceParent;
         this.is_focusable = false;
     }
+
+    doFocusedChanged(isHeld:boolean, isCentered:boolean) {
+    }
 };
 
 export { TempleFieldBase }
