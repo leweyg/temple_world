@@ -7,14 +7,14 @@ class ControlFromWeb {
     domElement : HTMLElement;
     controlGroup : ControllerGroup;
     unitRadiusPixels = 100.0;
-    keysId = "keys";
-    keysDirByKey = {
+    keysId = -222; //"keys";
+    keysDirByKey : {[k:string]:THREE.Vector3} = {
         'a':new THREE.Vector3(-1, 0, 0),
         'd':new THREE.Vector3( 1, 0, 0),
         'w':new THREE.Vector3( 0, -1,0),
         's':new THREE.Vector3( 0, 1, 0),
     };
-    keyToggles = {
+    keyToggles : {[k:string]:string} = {
         '`':"devmenu",
         '~':"devmenu"
     };
@@ -36,9 +36,9 @@ class ControlFromWeb {
         this.listenWithPointer( 'pointerout', this.onPointerDone );
         this.listenWithPointer( 'pointercancel', this.onPointerDone );
 
-        this.listenWith( 'keydown', this.onKeyDown, true );
-        this.listenWith( 'keyup', this.onKeyUp, true );
-        this.listenWith( 'focusout', this.onKeyFocusOut, true );
+        this.listenWithKeyboard( 'keydown', this.onKeyDown, true );
+        this.listenWithKeyboard( 'keyup', this.onKeyUp, true );
+        this.listenWithKeyboard( 'focusout', this.onKeyFocusOut, true );
 
         this.domElement.addEventListener('contextmenu', ev => ev.preventDefault());
         this.domElement.addEventListener('touchstart', ev => ev.preventDefault());
@@ -74,6 +74,18 @@ class ControlFromWeb {
         var callback = method.bind(this);
         var wrapper = ((ev:Event)=>{
             callback(ev as PointerEvent);
+        });
+        this.listenWith(name, wrapper, isDocLevel);
+    }
+
+    listenWithKeyboard(
+        name:string, 
+        method:(evarg:KeyboardEvent)=>void, 
+        isDocLevel=false)
+    {
+        var callback = method.bind(this);
+        var wrapper = ((ev:Event)=>{
+            callback(ev as KeyboardEvent);
         });
         this.listenWith(name, wrapper, isDocLevel);
     }
@@ -189,12 +201,12 @@ class ControlFromWeb {
         return null;
     }
 
-    updateKeyState(key, isDown=false, isForce=true) {
-        key = ("" + key).toLowerCase();
+    updateKeyState(key:string, isDown=false, isForce=true) {
+        //var key = ("" + keyRaw).toLowerCase();
         var keepSignal = false;
         var isButton = false;
         if (key in this.keyToggles) {
-            var cur = this.ensureStreamById(this.keysId);
+            //var cur = this.ensureStreamById(this.keysId);
             key = this.keyToggles[key];
             keepSignal = true;
             isButton = true;
@@ -251,17 +263,17 @@ class ControlFromWeb {
         }
     }
 
-    onKeyDown(event) {
+    onKeyDown(event:KeyboardEvent) {
         var id = event.key
         this.updateKeyState(id, true);
     }
 
-    onKeyUp(event) {
+    onKeyUp(event:KeyboardEvent) {
         var id = event.key
         this.updateKeyState(id, false);
     }
 
-    onKeyFocusOut(event) {
+    onKeyFocusOut(event:KeyboardEvent) {
         var didChange = null;
         for (var k in this.keysDown) {
             if (this.keysDown[k]) {
@@ -270,7 +282,7 @@ class ControlFromWeb {
             }
         }
         if (didChange) {
-            this.updateKeyState(didChange, false, true);
+            this.updateKeyState(event.key, false, true);
         }
     }
 }

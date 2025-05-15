@@ -30,11 +30,13 @@ class ControllerStream {
     rawDelta : THREE.Vector3;
     unitInitial : THREE.Vector3;
     unitCurrent : THREE.Vector3;
+    unitLen : number = 0;
 
     isActive = false;
     isStart = false;
     isEnd = false;
     isDown = false;
+    isButton = false;
     phase = ControllerPhase.None;
     mode = ControllerMode.None;
     rawLengthPath = 0;
@@ -87,13 +89,13 @@ class ControllerGroup {
         console.assert(str.isControllerStream);
         this.cache.free(str);
     }
-    onControllerEvent(cntrl) {
+    onControllerEvent(cntrl:ControllerStream) {
         for (var i in this.callbacks) {
             var cb = this.callbacks[i];
             cb(cntrl);
         }
     }
-    listenControllerEvent(callback) {
+    listenControllerEvent(callback : (arg:ControllerStream)=>void ) {
         this.callbacks.push(callback);
     }
 };

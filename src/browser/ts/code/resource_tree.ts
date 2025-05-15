@@ -76,7 +76,7 @@ class ResourceTypeJson extends ResourceType {
     override makeResourcePromiseFromPath(resTree:ResourceTree)
         : Promise<ResourceData> {
         var rt = this.thisResourceType();
-        var ans = fetch(path)
+        var ans = fetch(resTree.resource_path)
             .then(res => res.json())
             .then(res => new ResourceData(rt,res,resTree));
         return ans;
@@ -187,7 +187,7 @@ class ResourceTree {
         parent:THREE.Object3D)
         : ResourceTree
     {
-        return subResourceScene(name, parent, null);
+        return this.subResourceScene(name, parent, (a,b)=>{});
     }
     // Creates a scene-typed resource
     //  If a parent is given, the resource is instantiated
@@ -204,7 +204,7 @@ class ResourceTree {
         var res = this.resourceAddChildByPath(name, ResourceTree.TypeThreeGroup);
         if (callback) {
             res.state_instance_callback = ((inst:ResourceInstance)=>{
-                callback(inst.inst_data as THREE.Object3D, inst.res_data);
+                callback(inst.inst_data as THREE.Object3D, res);
             });
         }
         if (parent) {
@@ -218,7 +218,7 @@ class ResourceTree {
         if (this.state_loader) {
             return this.state_loader;
         }
-        this.state_loader = this.resource_type.makeResourcePromiseFromPath(this.resource_path);
+        this.state_loader = this.resource_type.makeResourcePromiseFromPath(this);
         var _this = this;
         this.state_loader.then(k => {
             if (k) {
@@ -238,12 +238,12 @@ class ResourceTree {
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then((subSceneData:ResourceData) => {
             var instProm = _this.resource_type.makeResourceInstanceFromLoaded(
-                subSceneData, parentScene, _this );
+                subSceneData, parentScene );
             instProm.then(inst => {
                 console.assert(!_this.state_instance_latest);
                 _this.state_instance_latest = inst;
                 if (_this.state_instance_callback) {
-                    _this.state_instance_callback(inst,_this);
+                    _this.state_instance_callback(inst);
                 }
             });
             return instProm;
