@@ -2,21 +2,25 @@
 import * as THREE from 'three';
 
 class TempleAvatarBodyPart {
-    constructor(scene) {
+    isBodyPart = true;
+    initialPos : THREE.Vector3;
+    constructor(public scene:THREE.Object3D) {
         this.isBodyPart = true;
-        this.scene = scene;
         this.initialPos = this.scene.position.clone();
     }
 }
 
 class TempleAvatarBody {
+    scene : THREE.Object3D;
+    isAvatarBody = true;
+    primary : Array<TempleAvatarBodyPart> = [];
+    hands : Array<TempleAvatarBodyPart> = [];
 
-    constructor(parentScene) {
+    constructor(parentScene : THREE.Object3D) {
         this.scene = new THREE.Group();
         this.scene.name = "TempleAvatarBody";
         parentScene.add(this.scene);
 
-        this.isAvatarBody = true;
         var radius = 1.0/6.0;
         var seg_around = 32;
         var seg_height = 15;

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { ControllerGroup, ControllerMode, ControllerPhase, ControllerStream } from '../controls/temple_controls.js';
 import { TempleAvatar } from './temple_avatar.js';
+import { TempleTime } from '../temple_time.js';
 
 class ControlSettings {
     static lookRateUpDown = 0.5
@@ -22,6 +23,15 @@ class TempleAvatarControls {
     isDevModeChanged = false;
     controlSpace : THREE.Object3D;
     controlSpaceFly : THREE.Object3D;
+
+    _tq1 = new THREE.Quaternion();
+    _tv1 = new THREE.Vector3();
+    _tv2 = new THREE.Vector3();
+    _tvFacing = new THREE.Vector3();
+    _tqFacing = new THREE.Quaternion();
+    _tqFlatFacing = new THREE.Quaternion();
+    _tvUp = new THREE.Vector3(0,1.0,0);
+    _tvAcross = new THREE.Vector3(1.0,0,0);
     
     constructor(avatar:TempleAvatar, controlGroup:ControllerGroup) {
         this.isTempleAvatarControls = true;
@@ -42,7 +52,6 @@ class TempleAvatarControls {
         this.controlGroup.listenControllerEvent((c) => {
             _this.onControllerEvent(c);
         });
-        this.tv1 = new THREE.Vector3();
 
         var _this = this;
         this.avatar.world.time.listenToTime((time) => {
@@ -102,7 +111,7 @@ class TempleAvatarControls {
         if (animateHand) {
             //console.log("Avatar recieved input.");
             var hand = this.avatar.body.hands[0];
-            const tv1 = this.tv1;
+            const tv1 = this._tv1;
 
             tv1.copy(control.unitCurrent);
             tv1.multiplyScalar(0.5);
@@ -113,7 +122,7 @@ class TempleAvatarControls {
         this.avatar.world.time.requestUpdate();
     }
 
-    onUseControl(control, time) {
+    onUseControl(control : ControllerStream, time : TempleTime|null) {
         if (control.mode == ControllerMode.Walk) {
             this.onUseControl_WalkOrRun(control, time, false);
         } else if (control.mode == ControllerMode.Run) {
@@ -131,14 +140,15 @@ class TempleAvatarControls {
         }
     }
 
-    onUseControl_DevMode(control) {
+    onUseControl_DevMode(control : ControllerStream) {
         if (control.isEnd) {
             this.isDevMode = !this.isDevMode;
             this.isDevModeChanged = true;
         }
     }
 
-    onUseControl_WalkOrRun(control, time, isRun) {
+    
+    onUseControl_WalkOrRun(control:ControllerStream, time:TempleTime|null, isRun:boolean) {
         if (time == null) return;
         const tv1 = this._tv1;
         const tv2 = this._tv2;
@@ -163,15 +173,8 @@ class TempleAvatarControls {
         }
     }
 
-    _tq1 = new THREE.Quaternion();
-    _tv1 = new THREE.Vector3();
-    _tv2 = new THREE.Vector3();
-    _tvFacing = new THREE.Vector3();
-    _tqFacing = new THREE.Quaternion();
-    _tqFlatFacing = new THREE.Quaternion();
-    _tvUp = new THREE.Vector3(0,1.0,0);
-    _tvAcross = new THREE.Vector3(1.0,0,0);
-    onUseControl_LookOrAim(control, time, isAim) {
+
+    onUseControl_LookOrAim(control:ControllerStream, time:TempleTime|null, isAim:boolean) {
         if (time == null) {
             // start/stop stuff:
             if (isAim && (control.isStart || control.isEnd)) {
@@ -241,11 +244,11 @@ class TempleAvatarControls {
             const heldOffset = this._tv1;
             const rotateOriginWorld = this.avatar.scene.position;
             heldOffset.copy(heldScene.position);
-            heldScene.parent.localToWorld(heldOffset);
+            heldScene.parent?.localToWorld(heldOffset);
             heldOffset.sub(rotateOriginWorld);
             heldOffset.applyQuaternion(deltaQuat);
             heldOffset.add(rotateOriginWorld);
-            heldScene.parent.worldToLocal(heldOffset);
+            heldScene.parent?.worldToLocal(heldOffset);
             heldScene.position.copy(heldOffset);
         }
     }

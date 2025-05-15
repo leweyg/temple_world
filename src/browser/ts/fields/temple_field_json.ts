@@ -53,7 +53,7 @@ class TempleFieldJson extends TempleFieldBase {
         });
     }
 
-    doFocusedChanged(isHeld:boolean, isCentered:boolean) {
+    override doFocusedChanged(isHeld:boolean, isCentered:boolean) {
         const inst = this.res.latestInstance()?.asObject3D() as THREE.Mesh;
         const comn = this.res.latestLoaded()?.data as TempleFieldGeoData;
         if (inst && comn) {
