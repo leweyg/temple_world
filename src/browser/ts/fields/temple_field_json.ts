@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ResourceTree, ResourceTypeJson, ResourceData, ResourceInstance } from "../code/resource_tree.js";
+import { ResourceTree, ResourceTypeJson, ResourceData, ResourceInstance, ResourceType } from "../code/resource_tree.js";
 import { TempleFieldBase } from "./temple_field.js";
 import { TempleFieldGeoData } from "./temple_field_prime_shape.js"
 
@@ -39,8 +39,8 @@ class TempleFieldJson extends TempleFieldBase {
     sceneParent:THREE.Object3D;
     midParentScene:THREE.Object3D|null = null;
 
-    constructor(sceneParent:THREE.Object3D, resourceParent:ResourceTree, jsonPath="json_scene") {
-        super("res_field_json@" + jsonPath,resourceParent);
+    constructor(sceneParent:THREE.Object3D, resourceParent:ResourceTree, resType : ResourceType, jsonPath="json_scene") {
+        super("res_field_json@" + jsonPath,resourceParent, resType);
         const _this = this;
         this.is_focusable = true;
         this.sceneParent = sceneParent;

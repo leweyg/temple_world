@@ -13,8 +13,12 @@ class TempleFieldGeoData {
 }
 
 class TempleFieldPrimeShapeType extends ResourceType {
+    constructor() {
+        super();
+        this.name = "TempleFieldPrimeShapeType";
+    }
     static PrimType = new TempleFieldPrimeShapeType();
-    makeResourcePromiseFromPath(resTree:ResourceTree)
+    override makeResourcePromiseFromPath(resTree:ResourceTree)
         :Promise<ResourceData> {
         const geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
         const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
@@ -30,7 +34,7 @@ class TempleFieldPrimeShapeType extends ResourceType {
         var resInst = new ResourceData(this.thisResourceType(), res, resTree);
         return this.simplePromise(resInst);
     }
-    makeResourceInstanceFromLoaded(
+    override makeResourceInstanceFromLoaded(
         resData:ResourceData,
         parent:THREE.Object3D)
         :Promise<ResourceInstance> {
@@ -40,7 +44,7 @@ class TempleFieldPrimeShapeType extends ResourceType {
         const resInst = ResourceInstance.fromObject3D(inst, resData);
         return this.simplePromise( resInst );
     }
-    releaseResourceInstance(resInst:ResourceInstance) {
+    override releaseResourceInstance(resInst:ResourceInstance) {
         const inst = resInst.asObject3D();
         inst.parent?.remove(inst);
     }
@@ -51,7 +55,7 @@ class TempleFieldPrimeShape extends TempleFieldBase {
     sceneParent:THREE.Object3D;
     
     constructor(sceneParent:THREE.Object3D, resourceParent:ResourceTree, subtype="plane") {
-        super("primshape_" + subtype,resourceParent);
+        super("primshape_" + subtype,resourceParent, TempleFieldPrimeShapeType.PrimType);
         this.sceneParent = sceneParent;
         const _this = this;
         this.is_focusable = true;
