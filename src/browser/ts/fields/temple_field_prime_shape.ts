@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { TempleFieldBase } from './temple_field.js';
-import { ResourceType } from '../code/resource_tree.js';
+import { ResourceTree, ResourceType, ResourceData } from '../code/resource_tree.js';
 
 class TempleFieldPrimeShapeType extends ResourceType {
     static PrimType = new TempleFieldPrimeShapeType();
-    makeResourcePromiseFromPath(path) {
+    makeResourcePromiseFromPath(resTree:ResourceTree)
+        :Promise<ResourceData> {
         const geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
         const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
         const matCentered = new THREE.MeshToonMaterial({color:0xccCCcc});
@@ -29,6 +30,8 @@ class TempleFieldPrimeShapeType extends ResourceType {
 }
 
 class TempleFieldPrimeShape extends TempleFieldBase {
+    res : ResourceTree;
+    
     constructor(sceneParent, resourceParent, subtype="plane") {
         super("primshape_" + subtype,resourceParent);
         const _this = this;

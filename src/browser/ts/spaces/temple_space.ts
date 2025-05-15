@@ -7,15 +7,23 @@ import { TempleSpaceCodaChakra } from './space_codachakra.js'
 import { ResourceTree } from '../code/resource_tree.js';
 import { SpaceTrainingBoxes } from './space_training_boxes.js';
 import { SpaceEastAltar0 } from './east/altars/space_east_altar_0.js';
+import { TempleWorld } from '../temple_world.js';
+import { call } from 'three/tsl';
 
 class TempleSpace {
+    world:TempleWorld;
+    scene:THREE.Object3D;
+    levels:ResourceTree;
+    resources:ResourceTree;
+    lights : TempleLights;
 
-    constructor(world) {
+    constructor(world:TempleWorld) {
+        this.world = world;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpace";
         world.worldScene.add(this.scene);
 
-        this.levels = world.resourceRoot.subResourceScene("ActiveSpaces", this.scene);
+        this.levels = world.resourceRoot.subResourceSceneClean("ActiveSpaces", this.scene);
         this.resources = this.levels;
         this.registerLevelByCallback("Floor", k => {
             new TempleSpaceDirectionsBuilder(k);
@@ -55,26 +63,33 @@ class TempleSpace {
         }, 1000);
     }
 
-    registerLevelByCallback(name, callback, autoLoad=false) {
-        console.assert(callback);
-        var res = this.levels.subResourceScene(name, null, callback);
+    registerLevelByCallback(name:string, callback:(k:THREE.Object3D)=>void, autoLoad=false) {
+        var res = this.levels.subResourceScene(name, this.scene, 
+            (inst:THREE.Object3D,instRes:ResourceTree)=>{
+                callback(inst);
+        });
         if (autoLoad) {
             res.instanceAsync(this.scene);
         }
         return res;
     }
 
-    ensureLevel(name) {
+    ensureLevel(name:string):ResourceTree {
         var res = this.levels.resourceFindByPath(name);
-        console.assert(res);
-        res.instanceAsync(this.scene);
+        if (res) {
+            res.instanceAsync(this.scene);
+            return res;
+        } else {
+            throw ("Unknown level '" + name + "'.");
+        }
     }
 
-    leaveLevel(name) {
-        var res = this.levels.resourceFindByPath(name);
-        console.assert(res);
-        res.disposeInstance();
-        res.disposeLoad();
+    leaveLevel(name:string) {
+        const res = this.levels.resourceFindByPath(name);
+        if (res) {
+            res.disposeInstance();
+            res.disposeLoad();
+        }
     }
 
 

@@ -8,24 +8,32 @@
 //  tempScene.dispose();
 
 import * as THREE from 'three';
+import { call } from 'three/tsl';
 
 class ResourceData {
-    source_type : ResourceType;
     data : any = null;
+    source_type : ResourceType;
+    res : ResourceTree;
 
-    constructor(source_type:ResourceType, data:any) {
+    constructor(source_type:ResourceType, data:any, res:ResourceTree) {
         this.source_type = source_type;
         this.data = data;
+        this.res = res;
     }
 }
 
 class ResourceInstance {
-    src_data !: ResourceData;
-    inst : any;
+    inst_data : any;
+    res_data !: ResourceData;
+    isObject3D : boolean = false;
 
-    constructor(src_data:ResourceData, inst: any) {
-        this.src_data = src_data;
-        this.inst = inst;
+    constructor( inst: any, src_data:ResourceData, res_tree : ResourceTree) {
+        this.res_data = src_data;
+        this.inst_data = inst;
+    }
+    asObject3D() : THREE.Object3D {
+        console.assert(this.isObject3D);
+        return this.inst_data as THREE.Object3D;
     }
 }
 
@@ -34,43 +42,43 @@ class ResourceType {
 
     isSceneType() { return false; }
     thisResourceType():ResourceType { return this; }
-    makeResourcePromiseFromPath(path:string)
+    makeResourcePromiseFromPath(resTree:ResourceTree)
         :Promise<ResourceData> {
         throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
     }
     makeResourceInstanceFromLoaded(
         res:ResourceData,
-        parent:THREE.Object3D,
-        parentRes:ResourceTree)
+        parent:THREE.Object3D)
         :Promise<ResourceInstance>{
         throw "NotOverloaded: ResourceType.doResourceInstance";
     }
     releaseResourceInstance(inst:ResourceInstance) {
         throw "NotOverloaded: ResourceType.releaseResourceInstance";
     }
-    releaseResourcePromise(data:ResourceData) {
+    releaseResourcePromise(data:Promise<ResourceData>) {
         // usually empty nullify
     }
     simplePromise<T>(value: T): Promise<T> {
-        return Promise.resolve(value) as Promise<T>;
+        const ans:any = new Promise((resolve:any, reject:any) => {
+            resolve(value)
+          });
+        return ans as Promise<T>;
     }
-
 };
 
 class ResourceTypeJson extends ResourceType {
     name="ResourceTypeJson"
-    override makeResourcePromiseFromPath(path:string)
+    override makeResourcePromiseFromPath(resTree:ResourceTree)
         : Promise<ResourceData> {
         var rt = this.thisResourceType();
         var ans = fetch(path)
             .then(res => res.json())
-            .then(res => new ResourceData(rt,res));
+            .then(res => new ResourceData(rt,res,resTree));
         return ans;
     }
     override makeResourceInstanceFromLoaded(
         res:ResourceData,
-        parent:THREE.Object3D,
-        parentRes:ResourceTree) {
+        parent:THREE.Object3D):Promise<ResourceInstance> {
         throw "TODO";
     }
 }
@@ -78,41 +86,53 @@ class ResourceTypeJson extends ResourceType {
 class ResourceTypeThreeGroup extends ResourceType {
     name="ResourceTypeThreeGroup"
     isSceneType() { return true; }
-    override makeResourcePromiseFromPath(path) {
+    override makeResourcePromiseFromPath(resTree:ResourceTree):Promise<ResourceData> {
         return new Promise((resolve) => {
-            resolve(path);
+            resolve(new ResourceData(this.thisResourceType(), resTree.resource_path, resTree));
         });
     }
-    override releaseResourcePromise(loader) {
-    }
-    makeResourceInstanceFromLoaded(res, parent, parentRes) {
+    override makeResourceInstanceFromLoaded(
+        res:ResourceData,
+        parent:THREE.Object3D)
+        :Promise<ResourceInstance> {
         var obj = new THREE.Group();
-        obj.name = res;
+        obj.name = res.res.resource_path;
         if (parent) {
             parent.add(obj);
             ResourceTree.RequestUpdate();
         }
+        const inst = new ResourceInstance(obj, res, res.res);
+        inst.isObject3D = true;
         return new Promise((resolve) => {
-            resolve(obj);
+            resolve(inst);
         });
     }
-    releaseResourceInstance(inst) {
+    releaseResourceInstance(inst:ResourceInstance) {
         console.assert(inst.isObject3D);
-        if (inst.parent) {
-            inst.parent.remove(inst);
+        var obj = inst.asObject3D();
+        if (obj.parent) {
+            obj.parent.remove(obj);
         }
     }
 }
 
 
 class ResourceHelpers {
-    static removeFromArray(array, item) {
+    static removeFromArray(array:Array<any>, item:any) {
         const index = array.indexOf(item);
         if (index > -1) { // only splice array when item is found
             array.splice(index, 1); // 2nd parameter means remove one item only
         }
         return array;
     }
+}
+
+interface UtilAction<T> {
+    (arg:T) : void
+}
+
+interface UtilFunc<A,B> {
+    (arg:A) : B
 }
 
 class ResourceTree {
@@ -122,6 +142,11 @@ class ResourceTree {
     tree_children : Array<ResourceTree> = [];
 
     state_disposed = false;
+    state_instance_callback : UtilAction<ResourceInstance>|null = null;
+    state_loader : Promise<ResourceData>|null;
+    state_loaded_latest : ResourceData|null;
+    state_instance_latest : ResourceInstance|null;
+    state_instancer : Promise<ResourceInstance>|null;
 
     constructor(path:string=ResourceTree.NameDefault, resource_type=ResourceTree.TypeGeneric) {
         // Resource:
@@ -130,7 +155,7 @@ class ResourceTree {
         this.state_loader = null;
         this.state_loaded_latest = null;
         this.state_instancer = null;
-        this.state_instance_callback = null;
+        //this.state_instance_callback = null;
         this.state_instance_latest = null;
         this.state_disposed = false;
     }
@@ -148,27 +173,42 @@ class ResourceTree {
         return this.resourceAddChildByPath(path, type);
     }
 
+    subResourceSceneClean(
+        name:string, 
+        parent:THREE.Object3D)
+        : ResourceTree
+    {
+        return subResourceScene(name, parent, null);
+    }
     // Creates a scene-typed resource
     //  If a parent is given, the resource is instantiated
     //  If a callback is given, it is passed the created scene
-    subResourceScene(name:string, parent=null, callback=null) {
-        var res = this.resourceFindByPath(name);
-        if (res) return res;
+    subResourceScene(
+        name:string, 
+        parent:THREE.Object3D,
+        callback:(inst:THREE.Object3D, instTree:ResourceTree)=>void|null)
+        : ResourceTree
+    {
+        var resExist = this.resourceFindByPath(name);
+        if (resExist) return resExist;
 
         var res = this.resourceAddChildByPath(name, ResourceTree.TypeThreeGroup);
-        res.state_instance_callback = callback;
+        if (callback) {
+            res.state_instance_callback = ((inst:ResourceInstance)=>{
+                callback(inst.inst_data as THREE.Object3D, inst.res_data);
+            });
+        }
         if (parent) {
             res.instanceAsync(parent);
         }
         return res;
     }
 
-    resourceLoadAsync() {
+    resourceLoadAsync():Promise<ResourceData> {
         console.assert(!this.state_disposed);
         if (this.state_loader) {
             return this.state_loader;
         }
-        console.assert(this.resource_type);
         this.state_loader = this.resource_type.makeResourcePromiseFromPath(this.resource_path);
         var _this = this;
         this.state_loader.then(k => {
@@ -180,17 +220,16 @@ class ResourceTree {
         return this.state_loader;
     }
 
-    instanceAsync(parent) {
+    instanceAsync(parentScene:THREE.Object3D):Promise<ResourceInstance> {
         console.assert(!this.state_disposed);
         if (this.state_instancer) {
             return this.state_instancer;
         }
         var _this = this;
         var prom = this.resourceLoadAsync();
-        this.state_instancer = prom.then(subScene => {
+        this.state_instancer = prom.then((subSceneData:ResourceData) => {
             var instProm = _this.resource_type.makeResourceInstanceFromLoaded(
-                subScene, parent, _this );
-            console.assert(instProm);
+                subSceneData, parentScene, _this );
             instProm.then(inst => {
                 console.assert(!_this.state_instance_latest);
                 _this.state_instance_latest = inst;
@@ -203,13 +242,13 @@ class ResourceTree {
         return this.state_instancer;
     }
 
-    instanceTrySync() {
+    instanceTrySync(parentScene:THREE.Object3D):ResourceInstance|null {
         if (this.state_instance_latest) {
             return this.state_instance_latest;
         }
         // begin request:
         if (!this.state_instancer) {
-            this.instanceAsync();
+            this.instanceAsync(parentScene);
             if (this.state_instance_latest) {
                 return this.state_instance_latest;
             }
