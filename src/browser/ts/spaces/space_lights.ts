@@ -2,8 +2,12 @@
 import * as THREE from 'three';
 
 class TempleLights {
+    parentScene : THREE.Object3D;
+    directionalLight : THREE.DirectionalLight;
+    targetObject : THREE.Object3D;
 
-    constructor(parentScene) {
+    constructor(parentScene:THREE.Object3D) {
+        this.parentScene = parentScene;
         this.directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
         parentScene.add(this.directionalLight);
         this.targetObject = new THREE.Object3D(); 
@@ -15,7 +19,7 @@ class TempleLights {
         this.setMainIntensity(0.61);
     }
 
-    setMainIntensity(intensity) {
+    setMainIntensity(intensity:number) {
         this.directionalLight.intensity = intensity;
     }
 

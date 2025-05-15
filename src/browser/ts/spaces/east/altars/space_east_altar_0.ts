@@ -5,8 +5,9 @@ import { ResourceTree } from '../../../code/resource_tree.js';
 import { SpaceAltarShuzzle } from './space_altar_shuzzle.js';
 
 class SpaceEastAltar0 {
+    inner : ResourceTree;
 
-    constructor(sceneParent, resParent) {
+    constructor(sceneParent:THREE.Object3D, resParent:ResourceTree) {
         var jsonPath = "content/spaces/east/altars/east_altar_0.json"
         resParent = new ResourceTree()
         this.inner = resParent.subResource(jsonPath, SpaceAltarShuzzle.ResourceTypeShuzzle);

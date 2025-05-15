@@ -1,9 +1,12 @@
 
 import * as THREE from 'three';
-import { ResourceTree, ResourceTypeJson } from '../../../code/resource_tree.js';
+import { ResourceTree, ResourceTypeJson, ResourceData, ResourceInstance } from '../../../code/resource_tree.js';
 
 class SpaceAltarShuzzleInstance {
-    constructor(res, parent, parentRes) {
+    scene : THREE.Object3D;
+    lines : THREE.Line|null = null;
+
+    constructor(res:any, parent:THREE.Object3D, parentRes:ResourceTree) {
         const name = Object.keys(res)[0];
         const resData = res[name];
 
@@ -26,7 +29,7 @@ class SpaceAltarShuzzleInstance {
         }
     }
 
-    sceneFromMesh(data) {
+    sceneFromMesh(data:any) {
         
         if (data.VerticesPerPolygon == 2) {
             const verts = data.Vertices;
@@ -76,11 +79,18 @@ class SpaceAltarShuzzleInstance {
 class SpaceAltarShuzzle extends ResourceTypeJson {
     static ResourceTypeShuzzle = new SpaceAltarShuzzle();
 
-    makeResourceInstanceFromLoaded(res, parent, parentRes) {
+    makeResourceInstanceFromLoaded(
+        resData:ResourceData,
+        parent:THREE.Object3D)
+        :Promise<ResourceInstance>
+    {
+        var res = resData.data;
         var nameStr = Object.keys(res)[0];
         var data = res[nameStr];
-        var state = new SpaceAltarShuzzleInstance(res, parent, parentRes);
-        return this.simplePromise(state);
+        var state = new SpaceAltarShuzzleInstance(res, parent, resData.res);
+        var inst = new ResourceInstance(state.scene, resData, resData.res);
+        inst.isObject3D = true;
+        return this.simplePromise(inst);
     }
 }
 

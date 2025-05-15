@@ -317,5 +317,5 @@ class ResourceTree {
 
 
 
-export { ResourceTree, ResourceType, ResourceTypeJson }
+export { ResourceTree, ResourceType, ResourceTypeJson, ResourceData, ResourceInstance }
 

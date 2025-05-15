@@ -2,8 +2,12 @@
 import * as THREE from 'three';
 
 class TempleSpaceKalaChakra {
+    parentScene:THREE.Object3D;
+    scene : THREE.Object3D;
+    lines : THREE.Line;
 
-    constructor(parentScene) {
+    constructor(parentScene:THREE.Object3D) {
+        this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceKalaChakra"
         this.scene.position.set(0,0,-14.0);
@@ -11,7 +15,7 @@ class TempleSpaceKalaChakra {
 
         const material = new THREE.LineBasicMaterial( { color: 0xccFFcc } );
 
-        const points = [];
+        const points : Array<THREE.Vector3> = [];
         this.addLayerLines(points, 5.0, 0.0);
         this.addLayerLines(points, 4.0, 2.0);
         this.addLayerLines(points, 3.0, 4.0);
@@ -24,7 +28,7 @@ class TempleSpaceKalaChakra {
         this.scene.add( this.lines );
     }
 
-    addLayerLines(points, radius = 1.0, height = 0.0) {
+    addLayerLines(points:Array<THREE.Vector3>, radius = 1.0, height = 0.0) {
         points.push( new THREE.Vector3( 0, height, 0 ) );
         points.push( new THREE.Vector3( radius, height, 0 ) );
         points.push( new THREE.Vector3( radius, height, radius ) );
