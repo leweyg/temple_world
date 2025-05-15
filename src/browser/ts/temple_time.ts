@@ -74,7 +74,7 @@ class TempleTime {
         setTimeout(this.updateCallbackInternal, minTimeoutMS);
     }
 
-    listenToTime(callback:()=>void) {
+    listenToTime(callback:(time:TempleTime)=>void) {
         var listner = this.timeUsers.alloc();
         listner.callback = callback;
         return listner;
@@ -151,7 +151,7 @@ class TempleTime {
         }
         for (var i in this.timeUsers.active) {
             var tr = this.timeUsers.active[i];
-            tr.callback();
+            tr.callback(this);
         }
     }
 
@@ -186,7 +186,7 @@ class TimeUser {
     name : string;
     timer:TempleTime;
     isTimeUser : boolean;
-    callback : ()=>void;
+    callback : (t:TempleTime)=>void;
 
     constructor(timer:TempleTime) {
         this.isTimeUser = true;

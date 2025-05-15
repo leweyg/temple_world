@@ -1,39 +1,37 @@
 
 import * as THREE from 'three';
+import { TempleTime } from '../temple_time';
+import { TempleAvatar } from './temple_avatar';
 
 class TempleAvatarPose {
+    bodyPos = new THREE.Vector3();
+    bodyFacing = new THREE.Vector3(0,0,-1);
+    viewOffset = new THREE.Vector3(0,2.0,0);
+    viewFacing = new THREE.Vector3(0,-0.25,-1.0);
+    viewDistanceBase = 7.0;
+    viewDistanceAdjusted = this.viewDistanceBase;
+    viewFovScale = 1.0;
+    viewFovBase = 40;
+    viewFovRate = 12.5;
 
-    constructor(avatar) {
-        this.avatar = avatar;
-
-        this.bodyPos = new THREE.Vector3();
-        this.bodyFacing = new THREE.Vector3(0,0,-1);
-
-        this.viewOffset = new THREE.Vector3(0,2.0,0);
-        this.viewFacing = new THREE.Vector3(0,-0.25,-1.0);
+    constructor(public avatar : TempleAvatar) {
         this.viewFacing.normalize();
-        this.viewDistanceBase = 7.0;
-        this.viewDistanceAdjusted = this.viewDistanceBase;
-
-        this.viewFovScale = 1.0;
-        this.viewFovBase = 40;
-        this.viewFovRate = 12.5;
     }
 
-    applyToAvatarAll(time) {
+    applyToAvatarAll(time:TempleTime) {
         this.applyToBody(time);
         this.applyToControlSpace(time);
         this.applyToCamera(time);
     }
 
-    applyToBody(time) {
+    applyToBody(time:TempleTime) {
         const to = this.avatar.scene;
         to.position.copy(this.bodyPos);
         this.applyFacingAsRotation(to, this.bodyFacing);
     }
 
     _cv1 = new THREE.Vector3();
-    applyToControlSpace(time) {
+    applyToControlSpace(time:TempleTime) {
         var facing = this._cv1;
         facing.copy(this.viewFacing);
 
@@ -51,7 +49,7 @@ class TempleAvatarPose {
 
     _tv1 = new THREE.Vector3();
     _tv2 = new THREE.Vector3();
-    applyToCamera(time) {
+    applyToCamera(time:TempleTime) {
         var camPos = this._tv1;
         var extra = this._tv2;
 
@@ -68,8 +66,9 @@ class TempleAvatarPose {
         this.applyFacingAsRotation(camScene, this.viewFacing);
 
         const nextFov = this.viewFovBase * this.viewFovScale;
-        camScene.fov = time.fadeFloatRealTime( camScene.fov, nextFov, this.viewFovRate );
-        camScene.updateProjectionMatrix();
+        const camRaw = camScene as any;
+        camRaw.fov = time.fadeFloatRealTime( camRaw.fov, nextFov, this.viewFovRate );
+        camRaw.updateProjectionMatrix();
 
         view.postCameraMoved();
     }
@@ -78,7 +77,7 @@ class TempleAvatarPose {
     _tvUp = new THREE.Vector3(0,1.0,0);
     _tq1 = new THREE.Quaternion();
     _tm1 = new THREE.Matrix4();
-    applyFacingAsRotation(scene, facing) {
+    applyFacingAsRotation(scene:THREE.Object3D, facing:THREE.Vector3) {
         this._tm1.lookAt(this._tvZero, facing, this._tvUp);
         this._tq1.setFromRotationMatrix(this._tm1);
         scene.quaternion.copy(this._tq1);

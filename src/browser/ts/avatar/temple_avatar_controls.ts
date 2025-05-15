@@ -1,6 +1,6 @@
 
 import * as THREE from 'three';
-import { ControllerGroup, ControllerMode, ControllerPhase } from '../controls/temple_controls.js';
+import { ControllerGroup, ControllerMode, ControllerPhase, ControllerStream } from '../controls/temple_controls.js';
 import { TempleAvatar } from './temple_avatar.js';
 
 class ControlSettings {
@@ -50,7 +50,7 @@ class TempleAvatarControls {
         });
     }
 
-    onTimeStepped(time) {
+    onTimeStepped(time:TempleTime) {
         // before controllers:
         this.avatar.pose.viewFovScale = 1.0;
 
@@ -71,7 +71,7 @@ class TempleAvatarControls {
         }
     }
 
-    onControllerEvent(control) {
+    onControllerEvent(control:ControllerStream) {
         // do processing here
         //if ((!control.isDown) && (!control.isEnd)) return;
 

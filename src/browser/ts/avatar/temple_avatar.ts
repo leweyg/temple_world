@@ -8,6 +8,7 @@ import { TempleAvatarFocus } from './temple_avatar_focus.js';
 import { TempleAvatarReticle } from './temple_avatar_reticle.js';
 import { TempleWorld } from '../temple_world.js';
 import { ControllerGroup } from '../controls/temple_controls.js';
+import { TempleTime } from '../temple_time.js';
 
 class TempleAvatar {
     world : TempleWorld;
@@ -42,7 +43,7 @@ class TempleAvatar {
         });
     }
 
-    onTimeStepped(time) {
+    onTimeStepped(time:TempleTime) {
         this.controls.onTimeStepped(time);
         this.pose.applyToAvatarAll(time);
     }
