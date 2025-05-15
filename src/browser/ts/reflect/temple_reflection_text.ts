@@ -1,6 +1,17 @@
+import { ResourceTree } from "../code/resource_tree";
+import { TempleReflection } from "./temple_reflection";
+import * as THREE from 'three';
+
+class RefInst {
+    name:string;
+    children:Array<RefInst> = [];
+}
 
 class TempleReflectionText {
-    constructor(reflector) {
+    reflector : TempleReflection;
+    isTempleReflectionText = true;
+
+    constructor(reflector : TempleReflection) {
         this.reflector = reflector;
         this.isTempleReflectionText = true;
     }
@@ -19,7 +30,7 @@ class TempleReflectionText {
         return this.textFromNameTree(whole);
     }
 
-    textFromNameTree(obj, tabs=0, skipPrefix=false) {
+    textFromNameTree(obj:any, tabs=0, skipPrefix=false) {
         var line = "";
         for (var ti=0; ti<tabs && !skipPrefix; ti++) {
             line += "  ";
@@ -46,19 +57,19 @@ class TempleReflectionText {
         return line;
     }
 
-    objPrintResourceRecursive(resTree) {
-        var ans = {
-            name:resTree.resource_path + " <" + resTree.resource_type.name + ">",
-            children:[],
-        }
+    objPrintResourceRecursive(resTree:ResourceTree):RefInst {
+        var ans = new RefInst();
+        ans.name = resTree.resource_path + " <" + resTree.resource_type.name + ">",
+        ans.children = [];
         for (var ci in resTree.tree_children) {
             var child = resTree.tree_children[ci];
-            ans.children.push(this.objPrintResourceRecursive(child));
+            var ca = this.objPrintResourceRecursive(child);
+            ans.children.push(ca);
         }
         return ans;
     }
 
-    objPrintScene(node) {
+    objPrintScene(node:THREE.Object3D):THREE.Object3D {
         return node;
     }
 }

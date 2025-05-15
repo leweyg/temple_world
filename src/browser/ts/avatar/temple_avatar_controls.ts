@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
-import { ControllerMode, ControllerPhase } from '../controls/temple_controls.js';
+import { ControllerGroup, ControllerMode, ControllerPhase } from '../controls/temple_controls.js';
+import { TempleAvatar } from './temple_avatar.js';
 
 class ControlSettings {
     static lookRateUpDown = 0.5
@@ -14,8 +15,15 @@ class ControlSettings {
 };
 
 class TempleAvatarControls {
-
-    constructor(avatar, controlGroup) {
+    avatar : TempleAvatar;
+    controlGroup : ControllerGroup;
+    isTempleAvatarControls : boolean = true;
+    isDevMode = false;
+    isDevModeChanged = false;
+    controlSpace : THREE.Object3D;
+    controlSpaceFly : THREE.Object3D;
+    
+    constructor(avatar:TempleAvatar, controlGroup:ControllerGroup) {
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
         this.isDevMode = false;

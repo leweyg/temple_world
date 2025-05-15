@@ -1,52 +1,61 @@
 
 import * as THREE from 'three';
+import { ControllerGroup, ControllerStream } from '../controls/temple_controls.js'
+import { bool } from 'three/tsl';
 
 class ControlFromWeb {
+    domElement : HTMLElement;
+    controlGroup : ControllerGroup;
+    unitRadiusPixels = 100.0;
+    keysId = "keys";
+    keysDirByKey = {
+        'a':new THREE.Vector3(-1, 0, 0),
+        'd':new THREE.Vector3( 1, 0, 0),
+        'w':new THREE.Vector3( 0, -1,0),
+        's':new THREE.Vector3( 0, 1, 0),
+    };
+    keyToggles = {
+        '`':"devmenu",
+        '~':"devmenu"
+    };
+    keysDown : {[k:string]:boolean} = {};
 
-    constructor(domElement, controlGroup) {
+    constructor(domElement:HTMLElement, controlGroup : ControllerGroup) {
         this.domElement = domElement;
         this.controlGroup = controlGroup;
-        this.domElement.style['touch-action'] = "none"; // disables default scroll
+        this.domElement.style.touchAction = "none"; // disables default scroll
 
         this.unitRadiusPixels = 100.0;
 
         // mouseup, mousedown.
-		this.listenWith( 'pointerdown', this.onPointerDown );
-        this.listenWith( 'pointermove', this.onPointerMove );
-		this.listenWith( 'pointerup', this.onPointerUp );
+		this.listenWithPointer( 'pointerdown', this.onPointerDown );
+        this.listenWithPointer( 'pointermove', this.onPointerMove );
+		this.listenWithPointer( 'pointerup', this.onPointerUp );
 
-        this.listenWith( 'pointerleave', this.onPointerDone );
-        this.listenWith( 'pointerout', this.onPointerDone );
-        this.listenWith( 'pointercancel', this.onPointerDone );
+        this.listenWithPointer( 'pointerleave', this.onPointerDone );
+        this.listenWithPointer( 'pointerout', this.onPointerDone );
+        this.listenWithPointer( 'pointercancel', this.onPointerDone );
 
         this.listenWith( 'keydown', this.onKeyDown, true );
         this.listenWith( 'keyup', this.onKeyUp, true );
         this.listenWith( 'focusout', this.onKeyFocusOut, true );
 
-        var justPreventDefault = ((e) => {
-            e.preventDefault();
-          });
-        this.domElement.addEventListener('contextmenu', justPreventDefault);
-        this.domElement.addEventListener('touchstart', justPreventDefault);
-        
-        this.keysId = "keys";
-        this.keysDirByKey = {
-            'a':new THREE.Vector3(-1, 0, 0),
-            'd':new THREE.Vector3( 1, 0, 0),
-            'w':new THREE.Vector3( 0, -1,0),
-            's':new THREE.Vector3( 0, 1, 0),
-        }
-        this.keyToggles = {
-            '`':"devmenu",
-            '~':"devmenu"
-        }
-        this.keysDown = {};
+        this.domElement.addEventListener('contextmenu', ev => ev.preventDefault());
+        this.domElement.addEventListener('touchstart', ev => ev.preventDefault());
     }
 
-    listenWith(name, method, isDocLevel=false) {
+    doPreventDefault(ev:PointerEvent) {
+        ev.preventDefault();
+    }
+
+    listenWith(
+        name:string, 
+        method:(evarg:Event)=>void, 
+        isDocLevel=false)
+    {
         var callback = method.bind(this);
         var _this = this;
-        function pointerCallback(ev) {
+        function pointerCallback(ev:Event) {
             ev.preventDefault();
             callback(ev);
         };
@@ -57,7 +66,19 @@ class ControlFromWeb {
         }
     }
 
-    findStreamById(id) {
+    listenWithPointer(
+        name:string, 
+        method:(evarg:PointerEvent)=>void, 
+        isDocLevel=false)
+    {
+        var callback = method.bind(this);
+        var wrapper = ((ev:Event)=>{
+            callback(ev as PointerEvent);
+        });
+        this.listenWith(name, wrapper, isDocLevel);
+    }
+
+    findStreamById(id:number):ControllerStream|null {
         var actives = this.controlGroup.getActives();
         console.assert(Array.isArray(actives));
         for (var i in actives) {
@@ -69,21 +90,25 @@ class ControlFromWeb {
         return null;
     }
 
-    ensureStreamById(id) {
+    ensureStreamById(id:number):ControllerStream {
         var str = this.findStreamById(id);
         if (str) return str;
         return this.controlGroup.beginStream();
     }
 
-    cleanStream(str) {
+    cleanStream(str:ControllerStream) {
         if (str != null) {
             this.controlGroup.endStream(str);
-            str = null;
         }
         return this.controlGroup.beginStream();
     }
 
-    updateStreamFromPointer( stream, event, isStart=false, isEnd=false ) {
+    updateStreamFromPointer(
+        stream:ControllerStream, 
+        event:PointerEvent, 
+        isStart=false, 
+        isEnd=false )
+    {
         stream.rawId = event.pointerId;
         stream.rawPrevious.copy(stream.rawCurrent);
 
@@ -115,7 +140,7 @@ class ControlFromWeb {
         }
     }
 
-    onPointerDown( event ) {
+    onPointerDown( event:PointerEvent ) {
         var id = event.pointerId
         var cur = this.ensureStreamById(id);
         cur.isDown = true;
@@ -123,14 +148,14 @@ class ControlFromWeb {
         this.controlGroup.onControllerEvent(cur);
     }
 
-    onPointerMove( event ) {
+    onPointerMove( event:PointerEvent ) {
         var id = event.pointerId
         var cur = this.ensureStreamById(id);
         this.updateStreamFromPointer(cur, event);
         this.controlGroup.onControllerEvent(cur);
     }
 
-    onPointerUp(event) {
+    onPointerUp(event:PointerEvent) {
         var id = event.pointerId
         var cur = this.ensureStreamById(id);
         cur.isDown = false;
@@ -139,7 +164,7 @@ class ControlFromWeb {
         this.controlGroup.endStream(cur);
     }
 
-    onPointerDone(event) {
+    onPointerDone(event:PointerEvent) {
         var id = event.pointerId
         var cur = this.ensureStreamById(id);
         if (cur.isDown || cur.isStart) {
