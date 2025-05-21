@@ -33,7 +33,13 @@ var TempleFieldPrimeShapeType = /** @class */ (function (_super) {
         _this_1.name = "TempleFieldPrimeShapeType";
         return _this_1;
     }
-    TempleFieldPrimeShapeType.prototype.makeResourcePromiseFromPath = function (resTree) {
+    TempleFieldPrimeShapeType.prototype.isSyncAlloc = function () {
+        return true;
+    };
+    TempleFieldPrimeShapeType.prototype.makeSyncResourceInstanceFromPath = function (resTree) {
+        return this.internalMakeDataSync(resTree, resTree.tree_parent.ensureInstance().asObject3D());
+    };
+    TempleFieldPrimeShapeType.prototype.internalMakeDataSync = function (resTree, parent) {
         var geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
         var matDefault = new THREE.MeshToonMaterial({ color: 0x00FF00 });
         var matCentered = new THREE.MeshToonMaterial({ color: 0xccCCcc });
@@ -45,15 +51,11 @@ var TempleFieldPrimeShapeType = /** @class */ (function (_super) {
             matCentered: matCentered,
             matHeld: matHeld,
         };
-        var resInst = new ResourceData(this.thisResourceType(), res, resTree);
-        return this.simplePromise(resInst);
-    };
-    TempleFieldPrimeShapeType.prototype.makeResourceInstanceFromLoaded = function (resData, parent) {
-        var res = resData.data;
+        var resData = new ResourceData(this.thisResourceType(), res, resTree);
         var inst = new THREE.Mesh(res.geo, res.mat);
         parent.add(inst);
         var resInst = ResourceInstance.fromObject3D(inst, resData);
-        return this.simplePromise(resInst);
+        return resInst;
     };
     TempleFieldPrimeShapeType.prototype.releaseResourceInstance = function (resInst) {
         var _a;

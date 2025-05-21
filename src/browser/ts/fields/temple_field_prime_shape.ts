@@ -18,8 +18,14 @@ class TempleFieldPrimeShapeType extends ResourceType {
         this.name = "TempleFieldPrimeShapeType";
     }
     static PrimType = new TempleFieldPrimeShapeType();
-    override makeResourcePromiseFromPath(resTree:ResourceTree)
-        :Promise<ResourceData> {
+    override isSyncAlloc(): boolean {
+        return true;
+    }
+    override makeSyncResourceInstanceFromPath(resTree: ResourceTree): ResourceInstance {
+        return this.internalMakeDataSync(resTree, resTree.tree_parent!.ensureInstance().asObject3D() );
+        
+    }
+    internalMakeDataSync(resTree:ResourceTree, parent:THREE.Object3D):ResourceInstance {
         const geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
         const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
         const matCentered = new THREE.MeshToonMaterial({color:0xccCCcc});
@@ -31,18 +37,13 @@ class TempleFieldPrimeShapeType extends ResourceType {
             matCentered : matCentered,
             matHeld : matHeld,
         };
-        var resInst = new ResourceData(this.thisResourceType(), res, resTree);
-        return this.simplePromise(resInst);
-    }
-    override makeResourceInstanceFromLoaded(
-        resData:ResourceData,
-        parent:THREE.Object3D)
-        :Promise<ResourceInstance> {
-        const res = resData.data as TempleFieldGeoData;
+        var resData = new ResourceData(this.thisResourceType(), res, resTree);
+
         const inst = new THREE.Mesh(res.geo, res.mat);
         parent.add(inst);
         const resInst = ResourceInstance.fromObject3D(inst, resData);
-        return this.simplePromise( resInst );
+
+        return resInst;
     }
     override releaseResourceInstance(resInst:ResourceInstance) {
         const inst = resInst.asObject3D();

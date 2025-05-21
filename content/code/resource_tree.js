@@ -99,6 +99,12 @@ var ResourceType = /** @class */ (function () {
         });
         return ans;
     };
+    ResourceType.prototype.simplePromiseAsNotNull = function (value) {
+        var ans = new Promise(function (resolve, reject) {
+            resolve(value);
+        });
+        return ans;
+    };
     return ResourceType;
 }());
 ;
@@ -263,16 +269,20 @@ var ResourceTree = /** @class */ (function () {
             var syncInstancer = this.state_instancer;
             return syncInstancer;
         }
+        if (this.state_instance_latest && !this.state_instancer) {
+            this.state_instancer = this.resource_type.simplePromiseAsNotNull(this.state_instance_latest);
+            return this.state_instancer;
+        }
         var _this = this;
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then(function (subSceneData) {
-            var instProm = _this.resource_type.makeResourceInstanceFromLoaded(subSceneData, parentScene);
-            instProm.then(function (inst) {
+            var instProm = _this.resource_type.makeResourceInstanceFromLoaded(subSceneData, parentScene).then(function (inst) {
                 console.assert(!_this.state_instance_latest);
                 _this.state_instance_latest = inst;
                 if (_this.state_instance_callback) {
                     _this.state_instance_callback(inst);
                 }
+                return inst;
             });
             return instProm;
         });

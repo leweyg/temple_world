@@ -99,6 +99,12 @@ class ResourceType {
           });
         return ans as Promise<T>;
     }
+    simplePromiseAsNotNull<T>(value: T): Promise<T>|null {
+        const ans:any = new Promise((resolve:any, reject:any) => {
+            resolve(value)
+          });
+        return ans as Promise<T>;
+    }
 };
 
 class ResourceTypeJson extends ResourceType {
@@ -290,17 +296,21 @@ class ResourceTree {
             const syncInstancer = this.state_instancer!;
             return syncInstancer;
         }
+        if (this.state_instance_latest && !this.state_instancer) {
+            this.state_instancer = this.resource_type.simplePromiseAsNotNull(this.state_instance_latest!);
+            return this.state_instancer!;
+        }
         var _this = this;
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then((subSceneData:ResourceData) => {
             var instProm = _this.resource_type.makeResourceInstanceFromLoaded(
-                subSceneData, parentScene );
-            instProm.then(inst => {
+                subSceneData, parentScene ).then(inst => {
                 console.assert(!_this.state_instance_latest);
                 _this.state_instance_latest = inst;
                 if (_this.state_instance_callback) {
                     _this.state_instance_callback(inst);
                 }
+                return inst;
             });
             return instProm;
         });
