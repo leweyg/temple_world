@@ -1,10 +1,13 @@
 # Temple World
 
-Demo: https://leweyg.github.io/temple_world/ 
+Play: https://leweyg.github.io/temple_world/ 
 
-A Temple World for you to explore. Combining spatial-spiritual themes with Zelda-Tears style mobile touch gameplay. https://leweyg.github.io/temple_world/about.html 
+A Temple World for you to explore. Built around a 5-story KalaCharka style temple,
+            with Zelda-Tears inspired mobile touch gameplay, and information theory themes. https://leweyg.github.io/temple_world/about.html 
 
 By Lewey Geselowitz - https://lewcid.com/lg/aboutme.html 
+
+Code: https://github.com/leweyg/temple_world/
 
 ##Temple World v0.07
 
