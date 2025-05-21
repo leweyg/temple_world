@@ -14,7 +14,9 @@ class TempleAvatarFocus {
     }
 
     heldScene():THREE.Object3D|null {
-        if (!this.held) return null;
+        if (!this.held) {
+            return null;
+        }
         const res = this.held.latestInstance();
         if (res) {
             return res.asObject3D();
@@ -30,20 +32,20 @@ class TempleAvatarFocus {
         if ((this.held == newHeld) && (this.centered == newCentered)) {
             return;
         }
-        if (newHeld) {
-            console.assert(newHeld.is_focusable);
+        if (this.centered != newCentered) {
+            console.log("Centered changing...");
+            if (newCentered) console.assert(newCentered.is_focusable);
+            if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
+            this.centered = newCentered;
+            if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
         }
-        if (newCentered) {
-            console.assert(newCentered.is_focusable);
+        if (this.held != newHeld) {
+            console.log("Held changing...");
+            if (newHeld) console.assert(newHeld.is_focusable);
+            if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
+            this.held = newHeld;
+            if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
         }
-
-        if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
-        if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
-        this.held = newHeld;
-        this.centered = newCentered;
-        if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
-        if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
-        
     }
 }
 

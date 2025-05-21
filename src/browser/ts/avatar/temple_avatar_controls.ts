@@ -176,6 +176,7 @@ class TempleAvatarControls {
 
     onUseControl_LookOrAim(control:ControllerStream, time:TempleTime|null, isAim:boolean) {
         if (time == null) {
+            
             // start/stop stuff:
             if (isAim && (control.isStart || control.isEnd)) {
                 time = this.avatar.world.time;
@@ -183,15 +184,12 @@ class TempleAvatarControls {
 
 
                 if (control.isEnd) {
-                    var centered = this.avatar.view.latestCenterField();
-                    var held = this.avatar.focus.held;
-                    if (held) {
-                        held = null;
-                    } else {
-                        held = centered;
-                    }
-                    centered = null;
-                    this.avatar.focus.ensureFocus(held, centered);
+                    const centered = this.avatar.view.latestCenterField();
+                    console.log("LatestCentered=" + centered);
+                    const oldHeld = this.avatar.focus.held;
+                    const newHeld = oldHeld ? null : centered;
+                    console.log("NewHeld=" + newHeld + " old=" + oldHeld + " centered=" + centered);
+                    this.avatar.focus.ensureFocus(newHeld, centered);
                 }
                 
             }

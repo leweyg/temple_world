@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { TempleWorld } from '../temple_world';
+import { TempleWorld } from '../temple_world.js';
+import { ResourceInstance } from '../code/resource_tree.js';
 
 class TempleFieldContacts {
     constructor(public world : TempleWorld) {
@@ -53,7 +54,17 @@ class TempleFieldContactsRay extends TempleFieldContacts {
         const intersects = this.raycaster.intersectObjects( this.possibles, true, this.intersects );
         console.assert(intersects == this.intersects);
         if (intersects.length > 0) {
-            const best = intersects[0];
+            var best = intersects[0];
+            var bestInst : ResourceInstance|null = null;
+            for (var hitIndex=0; hitIndex<intersects.length; hitIndex++) {
+                const cur = intersects[hitIndex];
+                const resInst = ResourceInstance.tryFromObject3D(cur.object);
+                if (resInst) {
+                    bestInst = resInst;
+                    best = cur;
+                    break;
+                }
+            }
             this.hit_now = true;
             this.hit_pos.copy(best.point);
             return intersects[0];

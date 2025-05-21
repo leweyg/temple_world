@@ -48,7 +48,7 @@ class TempleFieldJson extends TempleFieldBase {
         resourceParent.instanceAsync(sceneParent).then(midParentScene => {
             _this.midParentScene = midParentScene.asObject3D();
             _this.res.instanceAsync(midParentScene.asObject3D()).then(meshInst => {
-                meshInst.asObject3D().userData.field = _this;
+                //meshInst.asObject3D().userData.field = _this;
             });
         });
     }

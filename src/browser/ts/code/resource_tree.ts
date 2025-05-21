@@ -14,31 +14,56 @@ class ResourceData {
     data : any = null;
     source_type : ResourceType;
     res : ResourceTree;
+    is_res_data : boolean = true;
 
     constructor(source_type:ResourceType, data:any, res:ResourceTree) {
         this.source_type = source_type;
         this.data = data;
         this.res = res;
     }
+
+    assertHasResource() {
+        console.assert(this.res.is_resource_tree);
+    }
 }
 
 class ResourceInstance {
+    is_res_inst : boolean = true;
     inst_data : any;
-    res_data !: ResourceData;
+    res_data : ResourceData;
     isObject3D : boolean = false;
+    unique_id = 0;
+    static unique_counter = 1;
+    
 
     constructor( inst: any, src_data:ResourceData, res_tree : ResourceTree) {
         this.res_data = src_data;
         this.inst_data = inst;
+        this.res_data.assertHasResource();
+        this.unique_id = (ResourceInstance.unique_counter++);
     }
     static fromObject3D(obj:THREE.Object3D,src_data:ResourceData):ResourceInstance {
-        var inst = new ResourceInstance(obj, src_data, src_data.res);
+        const inst = new ResourceInstance(obj, src_data, src_data.res);
         inst.isObject3D = true;
+        obj.userData.resInstPtr = inst;
         return inst;
+    }
+    static tryFromObject3D(obj:THREE.Object3D) : ResourceInstance|null {
+        const resInstAny = obj.userData.resInstPtr;
+        if (resInstAny) {
+            const resInst = resInstAny as ResourceInstance;
+            console.assert(resInst.is_res_inst);
+            return resInst;
+        }
+        return null;
     }
     asObject3D() : THREE.Object3D {
         console.assert(this.isObject3D);
-        return this.inst_data as THREE.Object3D;
+        const obj = this.inst_data as THREE.Object3D;
+        if(obj.userData.resInstPtr.unique_id != this.unique_id) {
+            console.log("Userdata doesn't match this:" + obj.userData.resInst)
+        }
+        return obj;
     }
 }
 
@@ -141,6 +166,7 @@ interface UtilFunc<A,B> {
 }
 
 class ResourceTree {
+    is_resource_tree : boolean = false;
     resource_path : string;
     resource_type : ResourceType;
     tree_parent : ResourceTree|null = null;
@@ -156,6 +182,7 @@ class ResourceTree {
 
     constructor(path:string=ResourceTree.NameDefault, resource_type=ResourceTree.TypeGeneric) {
         // Resource:
+        this.is_resource_tree = true;
         this.resource_path = path;
         this.resource_type = (resource_type) ? resource_type : ResourceTree.TypeGeneric;
         this.state_loader = null;
