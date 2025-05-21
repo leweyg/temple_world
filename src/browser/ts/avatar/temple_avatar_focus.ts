@@ -40,7 +40,7 @@ class TempleAvatarFocus {
             if (this.centered) this.centered.doFocusedChanged(this.centered==newHeld, this.centered==newCentered);
         }
         if (this.held != newHeld) {
-            console.log("Held changing...");
+            console.log("Held changing to: " + (newHeld ? newHeld.fullPathStr() : "none"));
             if (newHeld) console.assert(newHeld.is_focusable);
             if (this.held) this.held.doFocusedChanged(this.held==newHeld, this.held==newCentered);
             this.held = newHeld;

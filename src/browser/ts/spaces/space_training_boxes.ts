@@ -9,8 +9,9 @@ class SpaceTrainingBoxes {
 
     constructor(sceneParent:THREE.Object3D, resParent:ResourceTree) {
         this.res = resParent.subResourceSceneClean("SpaceTrainingBoxes",sceneParent);
-        this.prim = new TempleFieldPrimeShape(sceneParent, this.res);
-        this.prim.instanceAsync(sceneParent)
+        const node = this.res.ensureInstance().asObject3D();
+        this.prim = new TempleFieldPrimeShape(node, this.res);
+        this.prim.instanceAsync(node)
             .then( k => k.asObject3D().position.set(4.0, 0.5, -2.0) );
     }
 

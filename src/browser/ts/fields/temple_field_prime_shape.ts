@@ -59,12 +59,9 @@ class TempleFieldPrimeShape extends TempleFieldBase {
         this.sceneParent = sceneParent;
         const _this = this;
         this.is_focusable = true;
-        this.res = this.resourceParent.subResource(subtype, TempleFieldPrimeShapeType.PrimType);
-        resourceParent.instanceAsync(sceneParent).then(parentScene => {
-            _this.res.instanceAsync(sceneParent).then(meshInst => {
-                meshInst.asObject3D().userData.field = _this;
-            });
-        });
+        this.resourceParent.resourceAddChild(this);
+        this.res = this.subResource(subtype, TempleFieldPrimeShapeType.PrimType);
+        this.res.instanceAsync(sceneParent);
     }
 
     override doFocusedChanged(isHeld:boolean, isCentered:boolean) {

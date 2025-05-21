@@ -36,9 +36,8 @@ class TempleWorld {
         this.reflector = new TempleReflection(this);
         
         ResourceTree.RequestUpdate = (() => this.time.requestUpdate());
-        this.resourceRoot = new ResourceTree();
-
-        this.worldScene = new THREE.Group();
+        this.resourceRoot = new ResourceTree("TempleWorld", ResourceTree.TypeThreeGroup);
+        this.worldScene = this.resourceRoot.ensureInstance().asObject3D();
         this.worldScene.name = "TempleWorld";
         parentScene.add(this.worldScene);
 

@@ -185,10 +185,11 @@ class TempleAvatarControls {
 
                 if (control.isEnd) {
                     const centered = this.avatar.view.latestCenterField();
-                    console.log("LatestCentered=" + centered);
                     const oldHeld = this.avatar.focus.held;
                     const newHeld = oldHeld ? null : centered;
-                    console.log("NewHeld=" + newHeld + " old=" + oldHeld + " centered=" + centered);
+                    if (true) {
+                        console.log("NewHeld=" + newHeld + " old=" + oldHeld + " centered=" + centered);
+                    }
                     this.avatar.focus.ensureFocus(newHeld, centered);
                 }
                 

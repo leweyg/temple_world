@@ -71,9 +71,14 @@ class ResourceType {
     name="ResourceType"
 
     isSceneType() { return false; }
+    isSyncAlloc() { return false; }
     thisResourceType():ResourceType { return this; }
     makeResourcePromiseFromPath(resTree:ResourceTree)
         :Promise<ResourceData> {
+        throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
+    }
+    makeSyncResourceInstanceFromPath(resTree:ResourceTree):ResourceInstance {
+        console.assert(this.isSyncAlloc());
         throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
     }
     makeResourceInstanceFromLoaded(
@@ -115,24 +120,41 @@ class ResourceTypeJson extends ResourceType {
 
 class ResourceTypeThreeGroup extends ResourceType {
     name="ResourceTypeThreeGroup"
-    isSceneType() { return true; }
+    override isSceneType() { return true; }
+    override isSyncAlloc(): boolean { return true; }
+    setupObject3dInstance(resData:ResourceData,parent:THREE.Object3D|null):ResourceInstance {
+        var obj = new THREE.Group();
+        obj.name = resData.res.resource_path;
+        if (parent) {
+            parent.add(obj);
+            ResourceTree.RequestUpdate();
+        }
+        const inst = ResourceInstance.fromObject3D(obj, resData);
+        inst.isObject3D = true;
+        return inst;
+    }
+    override makeSyncResourceInstanceFromPath(resTree: ResourceTree): ResourceInstance {
+        const resData = new ResourceData(this.thisResourceType(), resTree.resource_path, resTree);
+        if (resTree.tree_parent) {
+            const parentObj3d = resTree.tree_parent!.ensureInstance().asObject3D();
+            return this.setupObject3dInstance(resData, parentObj3d);
+        } else {
+            console.log("Create parent-less object3d:" + resTree.fullPathStr() );
+            return this.setupObject3dInstance(resData, null);
+        }
+    }
     override makeResourcePromiseFromPath(resTree:ResourceTree):Promise<ResourceData> {
+        const resData = new ResourceData(this.thisResourceType(), resTree.resource_path, resTree);
         return new Promise((resolve) => {
-            resolve(new ResourceData(this.thisResourceType(), resTree.resource_path, resTree));
+            resolve(resData);
         });
     }
     override makeResourceInstanceFromLoaded(
         res:ResourceData,
         parent:THREE.Object3D)
-        :Promise<ResourceInstance> {
-        var obj = new THREE.Group();
-        obj.name = res.res.resource_path;
-        if (parent) {
-            parent.add(obj);
-            ResourceTree.RequestUpdate();
-        }
-        const inst = ResourceInstance.fromObject3D(obj, res);
-        inst.isObject3D = true;
+        :Promise<ResourceInstance>
+    {
+        const inst = this.setupObject3dInstance(res, parent);
         return new Promise((resolve) => {
             resolve(inst);
         });
@@ -233,9 +255,10 @@ class ResourceTree {
             res.state_instance_callback = ((inst:ResourceInstance)=>{
                 callback(inst.inst_data as THREE.Object3D, res);
             });
+            res.state_instance_callback(this.ensureInstance());
         }
         if (parent) {
-            res.instanceAsync(parent);
+            res.ensureInstance();
         }
         return res;
     }
@@ -261,6 +284,12 @@ class ResourceTree {
         if (this.state_instancer) {
             return this.state_instancer;
         }
+        if (this.resource_type.isSyncAlloc()) {
+            this.ensureInstance();
+            console.assert(this.state_instancer != null);
+            const syncInstancer = this.state_instancer!;
+            return syncInstancer;
+        }
         var _this = this;
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then((subSceneData:ResourceData) => {
@@ -276,6 +305,20 @@ class ResourceTree {
             return instProm;
         });
         return this.state_instancer;
+    }
+
+    ensureInstance():ResourceInstance {
+        if (this.state_instance_latest) {
+            return this.state_instance_latest;
+        }
+        if (this.resource_type.isSyncAlloc()) {
+            const inst = this.resource_type.makeSyncResourceInstanceFromPath(this);
+            this.state_instance_latest = inst;
+            this.state_loaded_latest = inst.res_data;
+            this.state_instancer = this.resource_type.simplePromise(inst);
+            return this.state_instance_latest;
+        }
+        throw new Error("Ensure failed on ensureInstance");
     }
 
     instanceTrySync(parentScene:THREE.Object3D):ResourceInstance|null {
@@ -326,6 +369,22 @@ class ResourceTree {
         this.disposeTree();
     }
 
+    fullPath() : Array<string> {
+        const ans : Array<string> = [];
+        for ( var r : ResourceTree|null = this; r ; r = r.tree_parent ) {
+            const cr = r;
+            if (cr) {
+                ans.push( cr.resource_path );
+            }
+        }
+        return ans;
+    }
+
+    fullPathStr() : string {
+        var lst = this.fullPath();
+        return lst.join("/");
+    }
+
     resourceFindByPath(path:string, lookUp=true):ResourceTree|null {
         if (this.resource_path == path) {
             return this;
@@ -341,11 +400,21 @@ class ResourceTree {
         return null;
     }
 
+    resourceAddChild(child:ResourceTree) {
+        console.assert(!child.tree_parent);
+        child.tree_parent = this;
+        this.tree_children.push(child);
+    }
+
     resourceAddChildByPath(path:string, type=ResourceTree.TypeGeneric):ResourceTree {
         console.assert(!this.resourceFindByPath(path,false));
         var res = new ResourceTree(path, type);
         res.tree_parent = this;
         this.tree_children.push(res);
+        if (type.isSyncAlloc()) {
+            res.ensureInstance();
+            
+        }
         return res;
     }
 

@@ -37,7 +37,7 @@
 		<div id="info">
 			<a href="about.html">Temple World</a>
 			<span id="main-local-host-menu" style="display: none;">
-				<u onclick="mainDoRecompile()" style="color:green">(compile)</u>
+				<u onclick="mainDoRecompile()" style="color:green" id="main_recompile_link">(recompile)</u>
 			</span>
 		</div>
 		<div id="main_canvas_holder">
@@ -86,6 +86,7 @@
 
 			function mainDoRecompile() {
 				//alert("About to recompile...");
+				main_recompile_link.innerText = "(compiling...)";
 				fetch('src/browser/recompile.php')
 				.then(res => res.text())
 				.then(txt => {
