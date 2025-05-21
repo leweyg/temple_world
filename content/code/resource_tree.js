@@ -24,27 +24,50 @@ import * as THREE from 'three';
 var ResourceData = /** @class */ (function () {
     function ResourceData(source_type, data, res) {
         this.data = null;
+        this.is_res_data = true;
         this.source_type = source_type;
         this.data = data;
         this.res = res;
     }
+    ResourceData.prototype.assertHasResource = function () {
+        console.assert(this.res.is_resource_tree);
+    };
     return ResourceData;
 }());
 var ResourceInstance = /** @class */ (function () {
     function ResourceInstance(inst, src_data, res_tree) {
+        this.is_res_inst = true;
         this.isObject3D = false;
+        this.unique_id = 0;
         this.res_data = src_data;
         this.inst_data = inst;
+        this.res_data.assertHasResource();
+        this.unique_id = (ResourceInstance.unique_counter++);
     }
     ResourceInstance.fromObject3D = function (obj, src_data) {
         var inst = new ResourceInstance(obj, src_data, src_data.res);
         inst.isObject3D = true;
+        obj.userData.resInstPtr = inst;
         return inst;
+    };
+    ResourceInstance.tryFromObject3D = function (obj) {
+        var resInstAny = obj.userData.resInstPtr;
+        if (resInstAny) {
+            var resInst = resInstAny;
+            console.assert(resInst.is_res_inst);
+            return resInst;
+        }
+        return null;
     };
     ResourceInstance.prototype.asObject3D = function () {
         console.assert(this.isObject3D);
-        return this.inst_data;
+        var obj = this.inst_data;
+        if (obj.userData.resInstPtr.unique_id != this.unique_id) {
+            console.log("Userdata doesn't match this:" + obj.userData.resInst);
+        }
+        return obj;
     };
+    ResourceInstance.unique_counter = 1;
     return ResourceInstance;
 }());
 var ResourceType = /** @class */ (function () {
@@ -52,8 +75,13 @@ var ResourceType = /** @class */ (function () {
         this.name = "ResourceType";
     }
     ResourceType.prototype.isSceneType = function () { return false; };
+    ResourceType.prototype.isSyncAlloc = function () { return false; };
     ResourceType.prototype.thisResourceType = function () { return this; };
     ResourceType.prototype.makeResourcePromiseFromPath = function (resTree) {
+        throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
+    };
+    ResourceType.prototype.makeSyncResourceInstanceFromPath = function (resTree) {
+        console.assert(this.isSyncAlloc());
         throw "NotOverloaded: ResourceType.makeResourcePromiseFromPath";
     };
     ResourceType.prototype.makeResourceInstanceFromLoaded = function (res, parent) {
@@ -101,21 +129,37 @@ var ResourceTypeThreeGroup = /** @class */ (function (_super) {
         return _this_1;
     }
     ResourceTypeThreeGroup.prototype.isSceneType = function () { return true; };
-    ResourceTypeThreeGroup.prototype.makeResourcePromiseFromPath = function (resTree) {
-        var _this_1 = this;
-        return new Promise(function (resolve) {
-            resolve(new ResourceData(_this_1.thisResourceType(), resTree.resource_path, resTree));
-        });
-    };
-    ResourceTypeThreeGroup.prototype.makeResourceInstanceFromLoaded = function (res, parent) {
+    ResourceTypeThreeGroup.prototype.isSyncAlloc = function () { return true; };
+    ResourceTypeThreeGroup.prototype.setupObject3dInstance = function (resData, parent) {
         var obj = new THREE.Group();
-        obj.name = res.res.resource_path;
+        obj.name = resData.res.resource_path;
         if (parent) {
             parent.add(obj);
             ResourceTree.RequestUpdate();
         }
-        var inst = ResourceInstance.fromObject3D(obj, res);
+        var inst = ResourceInstance.fromObject3D(obj, resData);
         inst.isObject3D = true;
+        return inst;
+    };
+    ResourceTypeThreeGroup.prototype.makeSyncResourceInstanceFromPath = function (resTree) {
+        var resData = new ResourceData(this.thisResourceType(), resTree.resource_path, resTree);
+        if (resTree.tree_parent) {
+            var parentObj3d = resTree.tree_parent.ensureInstance().asObject3D();
+            return this.setupObject3dInstance(resData, parentObj3d);
+        }
+        else {
+            console.log("Create parent-less object3d:" + resTree.fullPathStr());
+            return this.setupObject3dInstance(resData, null);
+        }
+    };
+    ResourceTypeThreeGroup.prototype.makeResourcePromiseFromPath = function (resTree) {
+        var resData = new ResourceData(this.thisResourceType(), resTree.resource_path, resTree);
+        return new Promise(function (resolve) {
+            resolve(resData);
+        });
+    };
+    ResourceTypeThreeGroup.prototype.makeResourceInstanceFromLoaded = function (res, parent) {
+        var inst = this.setupObject3dInstance(res, parent);
         return new Promise(function (resolve) {
             resolve(inst);
         });
@@ -145,11 +189,13 @@ var ResourceTree = /** @class */ (function () {
     function ResourceTree(path, resource_type) {
         if (path === void 0) { path = ResourceTree.NameDefault; }
         if (resource_type === void 0) { resource_type = ResourceTree.TypeGeneric; }
+        this.is_resource_tree = false;
         this.tree_parent = null;
         this.tree_children = [];
         this.state_disposed = false;
         this.state_instance_callback = null;
         // Resource:
+        this.is_resource_tree = true;
         this.resource_path = path;
         this.resource_type = (resource_type) ? resource_type : ResourceTree.TypeGeneric;
         this.state_loader = null;
@@ -184,9 +230,10 @@ var ResourceTree = /** @class */ (function () {
             res.state_instance_callback = (function (inst) {
                 callback(inst.inst_data, res);
             });
+            res.state_instance_callback(this.ensureInstance());
         }
         if (parent) {
-            res.instanceAsync(parent);
+            res.ensureInstance();
         }
         return res;
     };
@@ -210,6 +257,12 @@ var ResourceTree = /** @class */ (function () {
         if (this.state_instancer) {
             return this.state_instancer;
         }
+        if (this.resource_type.isSyncAlloc()) {
+            this.ensureInstance();
+            console.assert(this.state_instancer != null);
+            var syncInstancer = this.state_instancer;
+            return syncInstancer;
+        }
         var _this = this;
         var prom = this.resourceLoadAsync();
         this.state_instancer = prom.then(function (subSceneData) {
@@ -224,6 +277,19 @@ var ResourceTree = /** @class */ (function () {
             return instProm;
         });
         return this.state_instancer;
+    };
+    ResourceTree.prototype.ensureInstance = function () {
+        if (this.state_instance_latest) {
+            return this.state_instance_latest;
+        }
+        if (this.resource_type.isSyncAlloc()) {
+            var inst = this.resource_type.makeSyncResourceInstanceFromPath(this);
+            this.state_instance_latest = inst;
+            this.state_loaded_latest = inst.res_data;
+            this.state_instancer = this.resource_type.simplePromise(inst);
+            return this.state_instance_latest;
+        }
+        throw new Error("Ensure failed on ensureInstance");
     };
     ResourceTree.prototype.instanceTrySync = function (parentScene) {
         if (this.state_instance_latest) {
@@ -268,6 +334,20 @@ var ResourceTree = /** @class */ (function () {
         this.disposeLoad();
         this.disposeTree();
     };
+    ResourceTree.prototype.fullPath = function () {
+        var ans = [];
+        for (var r = this; r; r = r.tree_parent) {
+            var cr = r;
+            if (cr) {
+                ans.push(cr.resource_path);
+            }
+        }
+        return ans;
+    };
+    ResourceTree.prototype.fullPathStr = function () {
+        var lst = this.fullPath();
+        return lst.join("/");
+    };
     ResourceTree.prototype.resourceFindByPath = function (path, lookUp) {
         if (lookUp === void 0) { lookUp = true; }
         if (this.resource_path == path) {
@@ -284,12 +364,20 @@ var ResourceTree = /** @class */ (function () {
         }
         return null;
     };
+    ResourceTree.prototype.resourceAddChild = function (child) {
+        console.assert(!child.tree_parent);
+        child.tree_parent = this;
+        this.tree_children.push(child);
+    };
     ResourceTree.prototype.resourceAddChildByPath = function (path, type) {
         if (type === void 0) { type = ResourceTree.TypeGeneric; }
         console.assert(!this.resourceFindByPath(path, false));
         var res = new ResourceTree(path, type);
         res.tree_parent = this;
         this.tree_children.push(res);
+        if (type.isSyncAlloc()) {
+            res.ensureInstance();
+        }
         return res;
     };
     ResourceTree.NameDefault = "(resource_root)";

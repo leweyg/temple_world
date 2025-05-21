@@ -169,15 +169,9 @@ var TempleAvatarControls = /** @class */ (function () {
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
                 if (control.isEnd) {
                     var centered = this.avatar.view.latestCenterField();
-                    var held = this.avatar.focus.held;
-                    if (held) {
-                        held = null;
-                    }
-                    else {
-                        held = centered;
-                    }
-                    centered = null;
-                    this.avatar.focus.ensureFocus(held, centered);
+                    var oldHeld = this.avatar.focus.held;
+                    var newHeld = oldHeld ? null : centered;
+                    this.avatar.focus.ensureFocus(newHeld, centered);
                 }
             }
             return;
@@ -212,8 +206,8 @@ var TempleAvatarControls = /** @class */ (function () {
         this.avatar.pose.adjustCameraForViewFacing();
         this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimZoomScalar : 1.0;
         if (isAim) {
-            var centered_1 = this.avatar.view.latestCenterField();
-            this.avatar.focus.ensureCentered(centered_1);
+            var centered = this.avatar.view.latestCenterField();
+            this.avatar.focus.ensureCentered(centered);
         }
         var heldScene = this.avatar.focus.heldScene();
         if (heldScene) {

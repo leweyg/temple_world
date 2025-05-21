@@ -14,6 +14,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 import * as THREE from 'three';
+import { ResourceInstance } from '../code/resource_tree.js';
 var TempleFieldContacts = /** @class */ (function () {
     function TempleFieldContacts(world) {
         this.world = world;
@@ -64,6 +65,16 @@ var TempleFieldContactsRay = /** @class */ (function (_super) {
         console.assert(intersects == this.intersects);
         if (intersects.length > 0) {
             var best = intersects[0];
+            var bestInst = null;
+            for (var hitIndex = 0; hitIndex < intersects.length; hitIndex++) {
+                var cur = intersects[hitIndex];
+                var resInst = ResourceInstance.tryFromObject3D(cur.object);
+                if (resInst) {
+                    bestInst = resInst;
+                    best = cur;
+                    break;
+                }
+            }
             this.hit_now = true;
             this.hit_pos.copy(best.point);
             return intersects[0];

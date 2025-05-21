@@ -60,7 +60,7 @@ var TempleFieldJson = /** @class */ (function (_super) {
         resourceParent.instanceAsync(sceneParent).then(function (midParentScene) {
             _this.midParentScene = midParentScene.asObject3D();
             _this.res.instanceAsync(midParentScene.asObject3D()).then(function (meshInst) {
-                meshInst.asObject3D().userData.field = _this;
+                //meshInst.asObject3D().userData.field = _this;
             });
         });
         return _this_1;

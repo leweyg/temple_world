@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { TempleTime } from './temple_time.js';
 import { TempleAvatar } from './avatar/temple_avatar.js';
 import { TempleSpace } from './spaces/temple_space.js';
@@ -14,8 +13,8 @@ var TempleWorld = /** @class */ (function () {
         this.time = new TempleTime(requestRedrawCallback);
         this.reflector = new TempleReflection(this);
         ResourceTree.RequestUpdate = (function () { return _this.time.requestUpdate(); });
-        this.resourceRoot = new ResourceTree();
-        this.worldScene = new THREE.Group();
+        this.resourceRoot = new ResourceTree("TempleWorld", ResourceTree.TypeThreeGroup);
+        this.worldScene = this.resourceRoot.ensureInstance().asObject3D();
         this.worldScene.name = "TempleWorld";
         parentScene.add(this.worldScene);
         this.space = new TempleSpace(this);

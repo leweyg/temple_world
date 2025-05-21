@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { TempleFieldContactsRay } from '../fields/temple_field_contacts.js';
+import { TempleFieldBase } from '../fields/temple_field.js';
+import { ResourceInstance } from '../code/resource_tree.js';
 var TempleAvatarView = /** @class */ (function () {
     function TempleAvatarView(avatar, cameraThree) {
         this.avatar = avatar;
@@ -26,12 +28,18 @@ var TempleAvatarView = /** @class */ (function () {
         var hit = this.targetContact.updateNearestContactSync(world);
         var hitField = null;
         if (hit) {
-            var field = hit.object.userData.field;
+            var hitInst = ResourceInstance.tryFromObject3D(hit.object);
+            var field = TempleFieldBase.tryFieldFromObject3D(hit.object);
             if (field && field.is_focusable) {
+                //console.log("Focusable hit...");
                 hitField = field;
+            }
+            else {
+                //console.log("Hit not focusable.");
             }
         }
         if (this.centerField != hitField) {
+            console.log("Center field changed...");
             this.centerField = hitField;
         }
     };

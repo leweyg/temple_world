@@ -71,12 +71,9 @@ var TempleFieldPrimeShape = /** @class */ (function (_super) {
         _this_1.sceneParent = sceneParent;
         var _this = _this_1;
         _this_1.is_focusable = true;
-        _this_1.res = _this_1.resourceParent.subResource(subtype, TempleFieldPrimeShapeType.PrimType);
-        resourceParent.instanceAsync(sceneParent).then(function (parentScene) {
-            _this.res.instanceAsync(sceneParent).then(function (meshInst) {
-                meshInst.asObject3D().userData.field = _this;
-            });
-        });
+        _this_1.resourceParent.resourceAddChild(_this_1);
+        _this_1.res = _this_1.subResource(subtype, TempleFieldPrimeShapeType.PrimType);
+        _this_1.res.instanceAsync(sceneParent);
         return _this_1;
     }
     TempleFieldPrimeShape.prototype.doFocusedChanged = function (isHeld, isCentered) {
