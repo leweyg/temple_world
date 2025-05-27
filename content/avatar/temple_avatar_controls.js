@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ControllerMode } from '../controls/temple_controls.js';
+import { TempleControlsOverlay } from './temple_controls_overlay.js';
 var ControlSettings = /** @class */ (function () {
     function ControlSettings() {
     }
@@ -31,6 +32,7 @@ var TempleAvatarControls = /** @class */ (function () {
         this.avatar = avatar;
         this.isDevMode = false;
         this.isDevModeChanged = false;
+        this.overlay = new TempleControlsOverlay();
         this.controlSpace = new THREE.Object3D();
         this.controlSpace.name = "controlSpace";
         this.avatar.world.worldScene.add(this.controlSpace);
@@ -65,6 +67,8 @@ var TempleAvatarControls = /** @class */ (function () {
         if (anyDown) {
             this.avatar.world.time.requestUpdate();
         }
+        // overlay after controllers:
+        this.overlay.updateFromAvatar(this.avatar);
     };
     TempleAvatarControls.prototype.onControllerEvent = function (control) {
         // do processing here

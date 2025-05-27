@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { ControllerGroup, ControllerMode, ControllerPhase, ControllerStream } from '../controls/temple_controls.js';
 import { TempleAvatar } from './temple_avatar.js';
 import { TempleTime } from '../temple_time.js';
+import { TempleControlsOverlay } from './temple_controls_overlay.js'
 
 class ControlSettings {
     static lookRateUpDown = 0.5
@@ -19,6 +20,7 @@ class ControlSettings {
 class TempleAvatarControls {
     avatar : TempleAvatar;
     controlGroup : ControllerGroup;
+    overlay : TempleControlsOverlay;
     isTempleAvatarControls : boolean = true;
     isDevMode = false;
     isDevModeChanged = false;
@@ -39,6 +41,7 @@ class TempleAvatarControls {
         this.avatar = avatar;
         this.isDevMode = false;
         this.isDevModeChanged = false;
+        this.overlay = new TempleControlsOverlay();
 
         this.controlSpace = new THREE.Object3D();
         this.controlSpace.name = "controlSpace";
@@ -79,6 +82,9 @@ class TempleAvatarControls {
         if (anyDown) {
             this.avatar.world.time.requestUpdate();
         }
+
+        // overlay after controllers:
+        this.overlay.updateFromAvatar(this.avatar);
     }
 
     onControllerEvent(control:ControllerStream) {
