@@ -7,6 +7,7 @@ var ControlSettings = /** @class */ (function () {
     ControlSettings.lookRateSide = 0.5;
     ControlSettings.lookRateAimScalar = 0.25;
     ControlSettings.aimZoomScalar = 0.61;
+    ControlSettings.aimRotatingScalar = 0.95;
     ControlSettings.aimAnimDuration = 2.0;
     ControlSettings.speedWalk = 1.0;
     ControlSettings.speedRun = 3.0;
@@ -73,9 +74,16 @@ var TempleAvatarControls = /** @class */ (function () {
             var halfRangeX = control.rawRange.x * 0.5;
             var halfRangeY = control.rawRange.y * 0.5;
             var isTopY = (control.rawInitial.y < halfRangeY);
-            if (control.rawInitial.x < halfRangeX) {
+            var isMoveSide = (control.rawInitial.x < halfRangeX);
+            var isHoldingObject = this.avatar.focus.heldScene();
+            if (isMoveSide) {
                 if (isTopY) {
-                    control.mode = ControllerMode.Run;
+                    if (isHoldingObject) {
+                        control.mode = ControllerMode.RotatingObject;
+                    }
+                    else {
+                        control.mode = ControllerMode.Run;
+                    }
                 }
                 else {
                     control.mode = ControllerMode.Walk;
@@ -92,6 +100,9 @@ var TempleAvatarControls = /** @class */ (function () {
         }
         else if (control.isStart && control.isButton) {
             control.mode = ControllerMode.DevMenu;
+        }
+        if (control.isStart || control.isEnd) {
+            console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
         }
         this.onUseControl(control, null);
         var animateHand = false;
@@ -118,6 +129,9 @@ var TempleAvatarControls = /** @class */ (function () {
         }
         else if (control.mode == ControllerMode.Aim) {
             this.onUseControl_LookOrAim(control, time, true);
+        }
+        else if (control.mode == ControllerMode.RotatingObject) {
+            this.onUseControl_RotatingObject(control, time, true);
         }
         else if (control.mode == ControllerMode.DevMenu) {
             this.onUseControl_DevMode(control);
@@ -221,6 +235,58 @@ var TempleAvatarControls = /** @class */ (function () {
             heldOffset.add(rotateOriginWorld);
             (_b = heldScene.parent) === null || _b === void 0 ? void 0 : _b.worldToLocal(heldOffset);
             heldScene.position.copy(heldOffset);
+        }
+    };
+    TempleAvatarControls.prototype.onUseControl_RotatingObject = function (control, time, isAim) {
+        if (time == null) {
+            // start/stop stuff:
+            if (isAim && (control.isStart || control.isEnd)) {
+                time = this.avatar.world.time;
+                time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+            }
+            return;
+        }
+        var held = this.avatar.focus.heldScene();
+        if (!held) {
+            console.log("No held scene for rotating.");
+            return;
+        }
+        var tq1 = this._tq1;
+        var prevFacing = this.avatar.pose.viewFacing;
+        var nxtFacing = this._tvFacing;
+        var lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
+        nxtFacing.copy(prevFacing);
+        var avatarSide = this._tv1;
+        avatarSide.copy(this._tvAcross);
+        this.controlSpace.localToWorld(avatarSide);
+        var dy = control.unitCurrent.y * time.dt * lookSpeed * -ControlSettings.lookRateUpDown;
+        tq1.setFromAxisAngle(avatarSide, dy);
+        nxtFacing.applyQuaternion(tq1);
+        var dx = control.unitCurrent.x * time.dt * lookSpeed * -ControlSettings.lookRateSide;
+        tq1.setFromAxisAngle(this._tvUp, dx);
+        nxtFacing.applyQuaternion(tq1);
+        var facingY = nxtFacing.y;
+        var maxY = 0.7;
+        facingY = Math.max(-maxY, Math.min(maxY, facingY));
+        nxtFacing.setY(facingY);
+        nxtFacing.normalize();
+        var deltaQuat = this._tqFacing;
+        deltaQuat.setFromUnitVectors(prevFacing, nxtFacing);
+        var deltaQuatFlat = this._tqFlatFacing;
+        var nextFacingFlat = this._tv2;
+        nextFacingFlat.copy(nxtFacing);
+        nextFacingFlat.setY(prevFacing.y);
+        deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
+        this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
+        //const held = this.avatar.focus.heldScene();
+        if (held) {
+            // console.log("Rotating held object...");
+            // rotate held object:
+            var heldOffset = this._tq1;
+            heldOffset.copy(held.quaternion);
+            heldOffset.multiply(deltaQuat);
+            heldOffset.multiply(deltaQuat);
+            held.quaternion.copy(heldOffset);
         }
     };
     return TempleAvatarControls;

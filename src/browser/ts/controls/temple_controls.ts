@@ -17,6 +17,7 @@ class ControllerMode {
     static Run = "Run";
     static Look = "Look";
     static Aim = "Aim";
+    static RotatingObject = "RotatingObject";
     static DevMenu = "DevMenu";
 };
 

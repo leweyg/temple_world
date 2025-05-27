@@ -20,6 +20,7 @@ var ControllerMode = /** @class */ (function () {
     ControllerMode.Run = "Run";
     ControllerMode.Look = "Look";
     ControllerMode.Aim = "Aim";
+    ControllerMode.RotatingObject = "RotatingObject";
     ControllerMode.DevMenu = "DevMenu";
     return ControllerMode;
 }());
