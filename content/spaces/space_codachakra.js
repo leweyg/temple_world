@@ -16,9 +16,10 @@ var TempleSpaceCodaChakra = /** @class */ (function () {
         var lines = new THREE.Line(geometry, material);
         this.scene.add(lines);
     }
-    TempleSpaceCodaChakra.prototype.addLayerLines = function (points, radius, height) {
+    TempleSpaceCodaChakra.prototype.addLayerLines = function (points, radius, heightRaw) {
         if (radius === void 0) { radius = 1.0; }
-        if (height === void 0) { height = 0.0; }
+        if (heightRaw === void 0) { heightRaw = 0.0; }
+        var height = ((heightRaw * -1.0) - 1.0);
         points.push(new THREE.Vector3(0, height, 0));
         points.push(new THREE.Vector3(radius, height, 0));
         points.push(new THREE.Vector3(radius, height, radius));

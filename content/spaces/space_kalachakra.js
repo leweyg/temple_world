@@ -17,9 +17,10 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
         this.lines = new THREE.Line(geometry, material);
         this.scene.add(this.lines);
     }
-    TempleSpaceKalaChakra.prototype.addLayerLines = function (points, radius, height) {
+    TempleSpaceKalaChakra.prototype.addLayerLines = function (points, radius, heightBase) {
         if (radius === void 0) { radius = 1.0; }
-        if (height === void 0) { height = 0.0; }
+        if (heightBase === void 0) { heightBase = 0.0; }
+        var height = (heightBase + 2.0);
         points.push(new THREE.Vector3(0, height, 0));
         points.push(new THREE.Vector3(radius, height, 0));
         points.push(new THREE.Vector3(radius, height, radius));

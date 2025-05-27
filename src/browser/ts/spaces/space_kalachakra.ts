@@ -28,7 +28,8 @@ class TempleSpaceKalaChakra {
         this.scene.add( this.lines );
     }
 
-    addLayerLines(points:Array<THREE.Vector3>, radius = 1.0, height = 0.0) {
+    addLayerLines(points:Array<THREE.Vector3>, radius = 1.0, heightBase = 0.0) {
+        const height = (heightBase + 2.0);
         points.push( new THREE.Vector3( 0, height, 0 ) );
         points.push( new THREE.Vector3( radius, height, 0 ) );
         points.push( new THREE.Vector3( radius, height, radius ) );
