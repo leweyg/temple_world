@@ -21,6 +21,7 @@ var ControllerMode = /** @class */ (function () {
     ControllerMode.Look = "Look";
     ControllerMode.Aim = "Aim";
     ControllerMode.RotatingObject = "RotatingObject";
+    ControllerMode.PushingObject = "PushingObject";
     ControllerMode.DevMenu = "DevMenu";
     return ControllerMode;
 }());

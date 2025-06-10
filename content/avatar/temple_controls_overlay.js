@@ -1,11 +1,13 @@
 var TempleControlsOverlay = /** @class */ (function () {
     function TempleControlsOverlay() {
         this.controlsOverlayTopLeft = null;
+        this.controlsOverlayTopRight = null;
         this.prevHeld = false;
         this.findFromDocument();
     }
     TempleControlsOverlay.prototype.findFromDocument = function () {
         this.controlsOverlayTopLeft = document.getElementById("controls-overlay-top-left");
+        this.controlsOverlayTopRight = document.getElementById("controls-overlay-top-right");
     };
     TempleControlsOverlay.prototype.updateFromAvatar = function (avatar) {
         // TODO: if exceptions are being thrown the binding
@@ -14,7 +16,8 @@ var TempleControlsOverlay = /** @class */ (function () {
         var isHeld = avatar.focus.held != null;
         if (isHeld != this.prevHeld) {
             this.prevHeld = isHeld;
-            this.controlsOverlayTopLeft.textContent = (isHeld ? "rotate" : "glide");
+            this.controlsOverlayTopLeft.textContent = (isHeld ? "push" : "glide");
+            this.controlsOverlayTopRight.textContent = (isHeld ? "rotate" : "focus");
         }
     };
     return TempleControlsOverlay;

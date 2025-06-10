@@ -18,6 +18,9 @@ var TempleAvatarFocus = /** @class */ (function () {
     TempleAvatarFocus.prototype.ensureCentered = function (newCentered) {
         this.ensureFocus(this.held, newCentered);
     };
+    TempleAvatarFocus.prototype.ensureHeld = function (newHeld) {
+        this.ensureFocus(newHeld, this.centered);
+    };
     TempleAvatarFocus.prototype.ensureFocus = function (newHeld, newCentered) {
         if ((this.held == newHeld) && (this.centered == newCentered)) {
             return;

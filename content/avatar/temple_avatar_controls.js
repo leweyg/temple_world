@@ -84,7 +84,7 @@ var TempleAvatarControls = /** @class */ (function () {
             if (isMoveSide) {
                 if (isTopY) {
                     if (isHoldingObject) {
-                        control.changeMode(ControllerMode.RotatingObject);
+                        control.changeMode(ControllerMode.PushingObject);
                     }
                     else {
                         control.changeMode(ControllerMode.Run);
@@ -96,7 +96,12 @@ var TempleAvatarControls = /** @class */ (function () {
             }
             else {
                 if (isTopY) {
-                    control.mode = ControllerMode.Aim;
+                    if (isHoldingObject) {
+                        control.changeMode(ControllerMode.RotatingObject);
+                    }
+                    else {
+                        control.mode = ControllerMode.Aim;
+                    }
                 }
                 else {
                     control.mode = ControllerMode.Look;
@@ -107,7 +112,7 @@ var TempleAvatarControls = /** @class */ (function () {
             control.mode = ControllerMode.DevMenu;
         }
         if (control.isStart || control.isEnd) {
-            console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
+            //console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
         }
         this.onUseControl(control, null);
         var animateHand = false;
@@ -137,6 +142,9 @@ var TempleAvatarControls = /** @class */ (function () {
         }
         else if (control.mode == ControllerMode.RotatingObject) {
             this.onUseControl_RotatingObject(control, time, true);
+        }
+        else if (control.mode == ControllerMode.PushingObject) {
+            this.onUseControl_PushObject(control, time, false);
         }
         else if (control.mode == ControllerMode.DevMenu) {
             this.onUseControl_DevMode(control);
@@ -260,9 +268,18 @@ var TempleAvatarControls = /** @class */ (function () {
     TempleAvatarControls.prototype.onUseControl_RotatingObject = function (control, time, isAim) {
         if (time == null) {
             // start/stop stuff:
-            if (isAim && (control.isStart || control.isEnd)) {
+            if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+                var oldHeld = this.avatar.focus.held;
+                if (control.isEnd) {
+                    if (oldHeld) {
+                        if (control.isGestureTap) {
+                            console.log("Dropping object after tap+rotate:");
+                            this.avatar.focus.ensureHeld(null);
+                        }
+                    }
+                }
             }
             return;
         }
@@ -308,6 +325,41 @@ var TempleAvatarControls = /** @class */ (function () {
             heldOffset.multiply(deltaQuat);
             held.quaternion.copy(heldOffset);
         }
+    };
+    TempleAvatarControls.prototype.onUseControl_PushObject = function (control, time, isRun) {
+        if (time == null) {
+            // start/stop stuff:
+            if (control.isStart || control.isEnd) {
+                time = this.avatar.world.time;
+                time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+                var oldHeld = this.avatar.focus.held;
+                if (control.isEnd) {
+                    if (oldHeld) {
+                        if (control.isGestureTap) {
+                            console.log("Dropping object after tap+rotate:");
+                            this.avatar.focus.ensureHeld(null);
+                        }
+                    }
+                }
+            }
+            return;
+        }
+        var held = this.avatar.focus.heldScene();
+        if (!held) {
+            console.log("No held scene for pushing.");
+            return;
+        }
+        var tv1 = this._tv1;
+        var tv2 = this._tv2;
+        tv1.copy(control.unitCurrent);
+        var motion = tv1.length();
+        tv1.set(tv1.x, 0, tv1.y);
+        var localToControl = this.controlSpace;
+        localToControl.localToWorld(tv1);
+        tv2.copy(tv1);
+        var baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk;
+        tv1.multiplyScalar(baseSpeed * time.dt);
+        held.position.add(tv1);
     };
     return TempleAvatarControls;
 }());

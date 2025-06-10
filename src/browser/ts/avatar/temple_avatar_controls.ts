@@ -102,7 +102,7 @@ class TempleAvatarControls {
             if (isMoveSide) {
                 if (isTopY) {
                     if (isHoldingObject) {
-                        control.changeMode( ControllerMode.RotatingObject );
+                        control.changeMode( ControllerMode.PushingObject );
                     } else {
                         control.changeMode( ControllerMode.Run );
                     }
@@ -111,7 +111,11 @@ class TempleAvatarControls {
                 }
             } else {
                 if (isTopY) {
-                    control.mode = ControllerMode.Aim;
+                    if (isHoldingObject) {
+                        control.changeMode( ControllerMode.RotatingObject );
+                    } else {
+                        control.mode = ControllerMode.Aim;
+                    }
                 } else {
                     control.mode = ControllerMode.Look;
                 }
@@ -120,7 +124,7 @@ class TempleAvatarControls {
             control.mode = ControllerMode.DevMenu;
         }
         if (control.isStart || control.isEnd) {
-            console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
+            //console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
         }
         this.onUseControl(control, null);
 
@@ -150,6 +154,8 @@ class TempleAvatarControls {
             this.onUseControl_LookOrAim(control, time, true);
         } else if (control.mode == ControllerMode.RotatingObject) {
             this.onUseControl_RotatingObject(control, time, true);
+        } else if (control.mode == ControllerMode.PushingObject) {
+            this.onUseControl_PushObject(control, time, false);
         } else if (control.mode == ControllerMode.DevMenu) {
             this.onUseControl_DevMode(control);
         } else if (control.mode == ControllerMode.None) {
@@ -287,9 +293,19 @@ class TempleAvatarControls {
         if (time == null) {
             
             // start/stop stuff:
-            if (isAim && (control.isStart || control.isEnd)) {
+            if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+
+                const oldHeld = this.avatar.focus.held;
+                if (control.isEnd) {
+                    if (oldHeld) {
+                        if (control.isGestureTap) {
+                            console.log("Dropping object after tap+rotate:")
+                            this.avatar.focus.ensureHeld(null);
+                        }
+                    }
+                }
             }
             
             return;
@@ -346,6 +362,51 @@ class TempleAvatarControls {
             heldOffset.multiply(deltaQuat);
             held.quaternion.copy(heldOffset);
         }
+    }
+
+
+    onUseControl_PushObject(control:ControllerStream, time:TempleTime|null, isRun:boolean) {
+        if (time == null) {
+            
+            // start/stop stuff:
+            if (control.isStart || control.isEnd) {
+                time = this.avatar.world.time;
+                time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+
+                const oldHeld = this.avatar.focus.held;
+                if (control.isEnd) {
+                    if (oldHeld) {
+                        if (control.isGestureTap) {
+                            console.log("Dropping object after tap+rotate:")
+                            this.avatar.focus.ensureHeld(null);
+                        }
+                    }
+                }
+            }
+            
+            return;
+        }
+
+        const held = this.avatar.focus.heldScene();
+        if (!held) {
+            console.log("No held scene for pushing.");
+            return;
+        }
+
+
+        const tv1 = this._tv1;
+        const tv2 = this._tv2;
+        tv1.copy( control.unitCurrent );
+        var motion = tv1.length();
+        tv1.set( tv1.x, 0, tv1.y );
+        const localToControl = this.controlSpace;
+        localToControl.localToWorld(tv1);
+        tv2.copy(tv1);
+        const baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk
+        tv1.multiplyScalar(baseSpeed * time.dt);
+        held.position.add(tv1);
+
+        // TODO: keep avatar looking at the object (probably gradually):
     }
 }
 

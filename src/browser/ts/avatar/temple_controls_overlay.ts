@@ -2,6 +2,7 @@ import { TempleAvatar } from "./temple_avatar";
 
 class TempleControlsOverlay {
     controlsOverlayTopLeft : HTMLElement | null = null;
+    controlsOverlayTopRight : HTMLElement | null = null;
     prevHeld = false;
 
     constructor() {
@@ -10,6 +11,7 @@ class TempleControlsOverlay {
 
     findFromDocument() {
         this.controlsOverlayTopLeft = document.getElementById("controls-overlay-top-left");
+        this.controlsOverlayTopRight = document.getElementById("controls-overlay-top-right");
     }
 
     updateFromAvatar(avatar : TempleAvatar) {
@@ -21,7 +23,8 @@ class TempleControlsOverlay {
         const isHeld = avatar.focus.held != null;
         if (isHeld != this.prevHeld) {
             this.prevHeld = isHeld;
-            this.controlsOverlayTopLeft!.textContent = (isHeld ? "rotate" : "glide");
+            this.controlsOverlayTopLeft!.textContent = (isHeld ? "push" : "glide");
+            this.controlsOverlayTopRight!.textContent= (isHeld ? "rotate" : "focus");
         }
     }
 }

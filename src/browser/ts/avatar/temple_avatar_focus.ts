@@ -28,6 +28,10 @@ class TempleAvatarFocus {
         this.ensureFocus(this.held, newCentered);
     }
 
+    ensureHeld(newHeld:TempleFieldBase|null) {
+        this.ensureFocus(newHeld, this.centered);
+    }
+
     ensureFocus(newHeld:TempleFieldBase|null, newCentered:TempleFieldBase|null) {
         if ((this.held == newHeld) && (this.centered == newCentered)) {
             return;
