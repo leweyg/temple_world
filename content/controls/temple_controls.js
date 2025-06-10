@@ -71,10 +71,7 @@ var ControllerStream = /** @class */ (function () {
         if (this.mode == mode) {
             return;
         }
-        this.isGestureStart = true;
-        this.isGestureDrag = false;
-        this.isGestureHold = false;
-        this.isGestureTap = false;
+        this.mode = mode;
     };
     return ControllerStream;
 }());

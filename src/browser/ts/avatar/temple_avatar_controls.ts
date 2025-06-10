@@ -120,7 +120,7 @@ class TempleAvatarControls {
             control.mode = ControllerMode.DevMenu;
         }
         if (control.isStart || control.isEnd) {
-            //console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
+            console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
         }
         this.onUseControl(control, null);
 
