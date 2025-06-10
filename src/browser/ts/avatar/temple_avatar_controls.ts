@@ -10,7 +10,7 @@ class ControlSettings {
     static lookRateSide = 0.5
     static lookRateAimScalar = 0.25
     static aimZoomScalar = 0.61
-    static aimRotatingScalar = 0.95
+    static aimRotatingScalar = 1.1
     static aimAnimDuration = 2.0;
 
     static speedWalk = 1.0;
@@ -91,6 +91,7 @@ class TempleAvatarControls {
         // do processing here
         //if ((!control.isDown) && (!control.isEnd)) return;
 
+        var nextMode = control.mode;
         if (control.isStart && !control.isButton) {
             console.assert(control.mode == ControllerMode.None);
             const halfRangeX = control.rawRange.x * 0.5;
@@ -101,9 +102,9 @@ class TempleAvatarControls {
             if (isMoveSide) {
                 if (isTopY) {
                     if (isHoldingObject) {
-                        control.mode = ControllerMode.RotatingObject;
+                        control.changeMode( ControllerMode.RotatingObject );
                     } else {
-                        control.mode = ControllerMode.Run;   
+                        control.changeMode( ControllerMode.Run );
                     }
                 } else {
                     control.mode = ControllerMode.Walk;
@@ -119,7 +120,7 @@ class TempleAvatarControls {
             control.mode = ControllerMode.DevMenu;
         }
         if (control.isStart || control.isEnd) {
-            console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
+            //console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
         }
         this.onUseControl(control, null);
 
@@ -201,14 +202,28 @@ class TempleAvatarControls {
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
 
 
+                const oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
-                    const centered = this.avatar.view.latestCenterField();
-                    const oldHeld = this.avatar.focus.held;
-                    const newHeld = oldHeld ? null : centered;
-                    this.avatar.focus.ensureFocus(newHeld, centered);
+                    console.log("Aim end...");
+                    if (oldHeld) {
+                        if (control.isGestureDrag) {
+                            console.log("Hold was held due to drag.");
+                            // was holding, still holding
+                        } else {
+                            const centered = this.avatar.view.latestCenterField();
+                            const newHeld = null;
+                            this.avatar.focus.ensureFocus(newHeld, centered);
+                        }
+                    } else {
+                        console.log("IsDrag=" + control.isGestureDrag);
+                        const centered = this.avatar.view.latestCenterField();
+                        const newHeld = oldHeld ? null : centered;
+                        this.avatar.focus.ensureFocus(newHeld, centered);
+                    }
                 }
                 
             }
+
             
             return;
         }
@@ -286,6 +301,9 @@ class TempleAvatarControls {
             return;
         }
 
+
+        this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
+
         const tq1 = this._tq1;
         const prevFacing = this.avatar.pose.viewFacing;
         const nxtFacing = this._tvFacing;
@@ -317,8 +335,6 @@ class TempleAvatarControls {
         nextFacingFlat.copy(nxtFacing);
         nextFacingFlat.setY(prevFacing.y);
         deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
-
-        this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
 
         //const held = this.avatar.focus.heldScene();
         if (held) {

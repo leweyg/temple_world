@@ -47,7 +47,7 @@ class TempleAvatarView {
             }
         }
         if (this.centerField != hitField) {
-            console.log("Center field changed...");
+            //console.log("Center field changed...");
             this.centerField = hitField;
         }
     }

@@ -34,6 +34,10 @@ var ControllerStream = /** @class */ (function () {
         this.isEnd = false;
         this.isDown = false;
         this.isButton = false;
+        this.isGestureStart = false;
+        this.isGestureDrag = false;
+        this.isGestureHold = false;
+        this.isGestureTap = false;
         this.phase = ControllerPhase.None;
         this.mode = ControllerMode.None;
         this.rawLengthPath = 0;
@@ -49,6 +53,7 @@ var ControllerStream = /** @class */ (function () {
         this.unitCurrent = new THREE.Vector3();
     }
     ControllerStream.prototype.resetStream = function () {
+        //console.log("Controller stream reset: " + this.rawId);
         this.isActive = false;
         this.isStart = false;
         this.isEnd = false;
@@ -57,6 +62,19 @@ var ControllerStream = /** @class */ (function () {
         this.mode = ControllerMode.None;
         this.rawLengthPath = 0;
         this.rawLengthCurrent = 0;
+        this.isGestureStart = true;
+        this.isGestureDrag = false;
+        this.isGestureHold = false;
+        this.isGestureTap = false;
+    };
+    ControllerStream.prototype.changeMode = function (mode) {
+        if (this.mode == mode) {
+            return;
+        }
+        this.isGestureStart = true;
+        this.isGestureDrag = false;
+        this.isGestureHold = false;
+        this.isGestureTap = false;
     };
     return ControllerStream;
 }());

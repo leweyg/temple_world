@@ -8,7 +8,7 @@ var ControlSettings = /** @class */ (function () {
     ControlSettings.lookRateSide = 0.5;
     ControlSettings.lookRateAimScalar = 0.25;
     ControlSettings.aimZoomScalar = 0.61;
-    ControlSettings.aimRotatingScalar = 0.95;
+    ControlSettings.aimRotatingScalar = 1.1;
     ControlSettings.aimAnimDuration = 2.0;
     ControlSettings.speedWalk = 1.0;
     ControlSettings.speedRun = 3.0;
@@ -73,6 +73,7 @@ var TempleAvatarControls = /** @class */ (function () {
     TempleAvatarControls.prototype.onControllerEvent = function (control) {
         // do processing here
         //if ((!control.isDown) && (!control.isEnd)) return;
+        var nextMode = control.mode;
         if (control.isStart && !control.isButton) {
             console.assert(control.mode == ControllerMode.None);
             var halfRangeX = control.rawRange.x * 0.5;
@@ -83,10 +84,10 @@ var TempleAvatarControls = /** @class */ (function () {
             if (isMoveSide) {
                 if (isTopY) {
                     if (isHoldingObject) {
-                        control.mode = ControllerMode.RotatingObject;
+                        control.changeMode(ControllerMode.RotatingObject);
                     }
                     else {
-                        control.mode = ControllerMode.Run;
+                        control.changeMode(ControllerMode.Run);
                     }
                 }
                 else {
@@ -106,7 +107,7 @@ var TempleAvatarControls = /** @class */ (function () {
             control.mode = ControllerMode.DevMenu;
         }
         if (control.isStart || control.isEnd) {
-            console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
+            //console.log("ControlMode='" + control.mode + "' go=" + control.isStart);
         }
         this.onUseControl(control, null);
         var animateHand = false;
@@ -185,11 +186,26 @@ var TempleAvatarControls = /** @class */ (function () {
             if (isAim && (control.isStart || control.isEnd)) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+                var oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
-                    var centered = this.avatar.view.latestCenterField();
-                    var oldHeld = this.avatar.focus.held;
-                    var newHeld = oldHeld ? null : centered;
-                    this.avatar.focus.ensureFocus(newHeld, centered);
+                    console.log("Aim end...");
+                    if (oldHeld) {
+                        if (control.isGestureDrag) {
+                            console.log("Hold was held due to drag.");
+                            // was holding, still holding
+                        }
+                        else {
+                            var centered = this.avatar.view.latestCenterField();
+                            var newHeld = null;
+                            this.avatar.focus.ensureFocus(newHeld, centered);
+                        }
+                    }
+                    else {
+                        console.log("IsDrag=" + control.isGestureDrag);
+                        var centered = this.avatar.view.latestCenterField();
+                        var newHeld = oldHeld ? null : centered;
+                        this.avatar.focus.ensureFocus(newHeld, centered);
+                    }
                 }
             }
             return;
@@ -255,6 +271,7 @@ var TempleAvatarControls = /** @class */ (function () {
             console.log("No held scene for rotating.");
             return;
         }
+        this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
         var tq1 = this._tq1;
         var prevFacing = this.avatar.pose.viewFacing;
         var nxtFacing = this._tvFacing;
@@ -281,7 +298,6 @@ var TempleAvatarControls = /** @class */ (function () {
         nextFacingFlat.copy(nxtFacing);
         nextFacingFlat.setY(prevFacing.y);
         deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
-        this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
         //const held = this.avatar.focus.heldScene();
         if (held) {
             // console.log("Rotating held object...");

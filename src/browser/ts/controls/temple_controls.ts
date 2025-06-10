@@ -38,6 +38,10 @@ class ControllerStream {
     isEnd = false;
     isDown = false;
     isButton = false;
+    isGestureStart = false;
+    isGestureDrag = false;
+    isGestureHold = false;
+    isGestureTap = false;
     phase = ControllerPhase.None;
     mode = ControllerMode.None;
     rawLengthPath = 0;
@@ -55,6 +59,7 @@ class ControllerStream {
         this.unitCurrent = new THREE.Vector3();
     }
     resetStream() {
+        //console.log("Controller stream reset: " + this.rawId);
         this.isActive = false;
         this.isStart = false;
         this.isEnd = false;
@@ -63,6 +68,19 @@ class ControllerStream {
         this.mode = ControllerMode.None;
         this.rawLengthPath = 0;
         this.rawLengthCurrent = 0;
+        this.isGestureStart = true;
+        this.isGestureDrag = false;
+        this.isGestureHold = false;
+        this.isGestureTap = false;
+    }
+    changeMode(mode:string) {
+        if (this.mode == mode) {
+            return;
+        }
+        this.isGestureStart = true;
+        this.isGestureDrag = false;
+        this.isGestureHold = false;
+        this.isGestureTap = false;
     }
 }
 

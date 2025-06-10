@@ -93,6 +93,10 @@ var ControlFromWeb = /** @class */ (function () {
         if (isStart === void 0) { isStart = false; }
         if (isEnd === void 0) { isEnd = false; }
         stream.rawId = event.pointerId;
+        if (isStart) {
+            // TODO: close previous stream
+            stream.resetStream();
+        }
         stream.rawPrevious.copy(stream.rawCurrent);
         // main coordinate transfer from HTML-DOM happens here:
         stream.rawCurrent.set(event.offsetX, event.offsetY, 0);
@@ -105,17 +109,38 @@ var ControlFromWeb = /** @class */ (function () {
             stream.rawPrevious.copy(stream.rawCurrent);
             stream.rawDelta.set(0, 0, 0);
             stream.rawLengthPath = 0;
+            stream.isGestureStart = true;
         }
-        else {
+        else { // end or update:
             stream.rawDelta.copy(stream.rawCurrent);
             stream.rawDelta.sub(stream.rawPrevious);
             var rawStep = stream.rawDelta.length();
+            //console.log("RawStep=" + rawStep);
             stream.rawLengthPath += rawStep;
+            var distForDrag = 30.0;
+            if (stream.isGestureStart) {
+                //console.log("stream.rawLengthPath  = " + stream.rawLengthPath );
+                if (stream.rawLengthPath > distForDrag) {
+                    //console.log("Drag started.")
+                    stream.isGestureStart = false;
+                    stream.isGestureDrag = true;
+                }
+                else {
+                    //console.log("Drag not started yet.")
+                }
+                // if long time -> isGestureHold
+            }
+            if (isEnd) {
+                //console.log("END: stream.rawLengthPath  = " + stream.rawLengthPath );
+                stream.isGestureTap = !stream.isGestureDrag;
+                stream.isGestureStart = false;
+            }
         }
         stream.unitCurrent.copy(stream.rawCurrent);
         stream.unitCurrent.sub(stream.rawInitial);
         stream.rawLengthCurrent = stream.unitCurrent.length();
         stream.unitCurrent.multiplyScalar(1.0 / this.unitRadiusPixels);
+        stream.rawPrevious.copy(stream.rawCurrent);
         var unitLen = stream.unitCurrent.length();
         if (unitLen > 1.0) {
             stream.unitCurrent.multiplyScalar(1.0 / unitLen);

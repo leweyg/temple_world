@@ -122,6 +122,10 @@ class ControlFromWeb {
         isEnd=false )
     {
         stream.rawId = event.pointerId;
+        if (isStart) {
+            // TODO: close previous stream
+            stream.resetStream();
+        }
         stream.rawPrevious.copy(stream.rawCurrent);
 
         // main coordinate transfer from HTML-DOM happens here:
@@ -136,16 +140,37 @@ class ControlFromWeb {
             stream.rawPrevious.copy(stream.rawCurrent);
             stream.rawDelta.set(0,0,0);
             stream.rawLengthPath = 0;
-        } else {
+            stream.isGestureStart = true;
+        } else { // end or update:
             stream.rawDelta.copy(stream.rawCurrent);
             stream.rawDelta.sub(stream.rawPrevious);
             const rawStep = stream.rawDelta.length();
+            //console.log("RawStep=" + rawStep);
             stream.rawLengthPath += rawStep;
+            
+            const distForDrag = 30.0;
+            if (stream.isGestureStart) {
+                //console.log("stream.rawLengthPath  = " + stream.rawLengthPath );
+                if (stream.rawLengthPath > distForDrag) {
+                    //console.log("Drag started.")
+                    stream.isGestureStart = false;
+                    stream.isGestureDrag = true;
+                } else {
+                    //console.log("Drag not started yet.")
+                }
+                // if long time -> isGestureHold
+            }
+            if (isEnd) {
+                //console.log("END: stream.rawLengthPath  = " + stream.rawLengthPath );
+                stream.isGestureTap = !stream.isGestureDrag;
+                stream.isGestureStart = false;
+            }
         }
         stream.unitCurrent.copy(stream.rawCurrent);
         stream.unitCurrent.sub(stream.rawInitial);
         stream.rawLengthCurrent = stream.unitCurrent.length();
         stream.unitCurrent.multiplyScalar(1.0 / this.unitRadiusPixels);
+        stream.rawPrevious.copy(stream.rawCurrent);
         const unitLen = stream.unitCurrent.length();
         if (unitLen > 1.0) {
             stream.unitCurrent.multiplyScalar(1.0 / unitLen);
