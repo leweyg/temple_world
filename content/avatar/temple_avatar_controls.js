@@ -360,6 +360,7 @@ var TempleAvatarControls = /** @class */ (function () {
         var baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk;
         tv1.multiplyScalar(baseSpeed * time.dt);
         held.position.add(tv1);
+        // TODO: keep avatar looking at the object (probably gradually):
     };
     return TempleAvatarControls;
 }());
