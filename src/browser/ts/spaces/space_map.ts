@@ -5,8 +5,9 @@ class TempleSpaceMapBuilder {
     scene : THREE.Object3D;
     parentScene : THREE.Object3D;
     surfaceShape = [ 7, 7 ];
-    texture : THREE.DataTexture;
+    texture : THREE.Texture;
     mesh : THREE.Mesh;
+    mainMaterial : THREE.Material;
 
     constructor(parentScene:THREE.Object3D) {
         this.parentScene = parentScene;
@@ -16,15 +17,16 @@ class TempleSpaceMapBuilder {
 
         this.texture = this.mapGridTexture();
 
-        const material = this.mapGridShader();
+        this.mainMaterial = this.mapGridShader();
 
         const data = this.mapGridVertices();
 
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute( 'position', new THREE.BufferAttribute( data.vertices, 3 ) );
+        geometry.setAttribute( 'uv', new THREE.BufferAttribute( data.uv, 2 ) );
         geometry.setIndex( data.indices );
 
-        this.mesh = new THREE.Mesh( geometry, material );
+        this.mesh = new THREE.Mesh( geometry, this.mainMaterial );
         this.scene.add( this.mesh );
     }
 
@@ -33,6 +35,10 @@ class TempleSpaceMapBuilder {
     }
 
     mapGridTexture() {
+        const loader = new THREE.TextureLoader();
+        const image = loader.load('content/images/sfbay_height.png'); 
+        return image;
+
         // 1. Create a DataTexture
         const height = this.surfaceShape[0];
         const width = this.surfaceShape[1];
@@ -56,10 +62,11 @@ class TempleSpaceMapBuilder {
 
     mapGridShader() {
         const flatMaterial = new THREE.MeshBasicMaterial( { 
-            color: 0x557755, 
+            //color: 0x557755, 
+            map : this.texture,
             //side:THREE.DoubleSide
         } );
-        //return flatMaterial;
+        return flatMaterial;
 
         const vertexShader = `
     uniform sampler2D displacementTexture;
@@ -81,10 +88,13 @@ class TempleSpaceMapBuilder {
     }
 `;
         const fragmentShader = `
+    uniform sampler2D displacementTexture;
     varying vec2 vUv;
 
     void main() {
-        gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);
+        vec4 displacement = texture2D(displacementTexture, vUv);
+        gl_FragColor = displacement; // vec4( displacement.r, 1, 0, 1 );
+        //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);
     }
 `;
         const material = new THREE.ShaderMaterial({
@@ -102,10 +112,13 @@ class TempleSpaceMapBuilder {
     mapGridVertices() {
         const points = [];
         const indices = [];
+        const uvs = [];
         const gridShape = this.surfaceShape;
         for (var gy=0; gy<gridShape[0]; gy++) {
             for (var gx=0; gx<gridShape[1]; gx++) {
                 points.push( new THREE.Vector3( gx, 0, -gy ) );
+                uvs.push( gy / gridShape[0] );
+                uvs.push( gx / gridShape[1] ); // TODO: x/(shape-1)
 
                 if ((gx>0) && (gy > 0)) {
                     indices.push( this.indexFromXY(gy-1,gx-1));
@@ -130,7 +143,8 @@ class TempleSpaceMapBuilder {
             linearPoints.push(v.z);
         }
         const vertices = new Float32Array(linearPoints);
-        return { vertices, indices };
+        const uv = new Float32Array(uvs);
+        return { vertices, uv, indices };
     }
 
 

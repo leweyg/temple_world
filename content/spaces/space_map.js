@@ -7,18 +7,22 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
         this.scene.name = "TempleSpaceMap";
         parentScene.add(this.scene);
         this.texture = this.mapGridTexture();
-        var material = this.mapGridShader();
+        this.mainMaterial = this.mapGridShader();
         var data = this.mapGridVertices();
         var geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(data.vertices, 3));
+        geometry.setAttribute('uv', new THREE.BufferAttribute(data.uv, 2));
         geometry.setIndex(data.indices);
-        this.mesh = new THREE.Mesh(geometry, material);
+        this.mesh = new THREE.Mesh(geometry, this.mainMaterial);
         this.scene.add(this.mesh);
     }
     TempleSpaceMapBuilder.prototype.indexFromXY = function (x, y) {
         return (y * this.surfaceShape[0]) + x;
     };
     TempleSpaceMapBuilder.prototype.mapGridTexture = function () {
+        var loader = new THREE.TextureLoader();
+        var image = loader.load('content/images/sfbay_height.png');
+        return image;
         // 1. Create a DataTexture
         var height = this.surfaceShape[0];
         var width = this.surfaceShape[1];
@@ -39,12 +43,13 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
     };
     TempleSpaceMapBuilder.prototype.mapGridShader = function () {
         var flatMaterial = new THREE.MeshBasicMaterial({
-            color: 0x557755,
+            //color: 0x557755, 
+            map: this.texture,
             //side:THREE.DoubleSide
         });
-        //return flatMaterial;
+        return flatMaterial;
         var vertexShader = "\n    uniform sampler2D displacementTexture;\n    uniform float uTime;\n    varying vec2 vUv;\n\n    void main() {\n        vUv = uv;\n        vec4 displacement = texture2D(displacementTexture, uv);\n        \n        // Use the red channel of the texture for displacement\n        float displacementFactor = displacement.r * 2.0; \n\n        // Apply displacement along the normal, optionally animated with time\n        vec3 displaceDir = vec3(0,1,0); // normal; \n        vec3 displacedPosition = position + displaceDir * displacementFactor * sin(uTime * 2.0 + position.x * 5.0);\n        \n        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);\n    }\n";
-        var fragmentShader = "\n    varying vec2 vUv;\n\n    void main() {\n        gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);\n    }\n";
+        var fragmentShader = "\n    uniform sampler2D displacementTexture;\n    varying vec2 vUv;\n\n    void main() {\n        vec4 displacement = texture2D(displacementTexture, vUv);\n        gl_FragColor = displacement; // vec4( displacement.r, 1, 0, 1 );\n        //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);\n    }\n";
         var material = new THREE.ShaderMaterial({
             uniforms: {
                 displacementTexture: { value: this.texture },
@@ -59,10 +64,13 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
     TempleSpaceMapBuilder.prototype.mapGridVertices = function () {
         var points = [];
         var indices = [];
+        var uvs = [];
         var gridShape = this.surfaceShape;
         for (var gy = 0; gy < gridShape[0]; gy++) {
             for (var gx = 0; gx < gridShape[1]; gx++) {
                 points.push(new THREE.Vector3(gx, 0, -gy));
+                uvs.push(gy / gridShape[0]);
+                uvs.push(gx / gridShape[1]); // TODO: x/(shape-1)
                 if ((gx > 0) && (gy > 0)) {
                     indices.push(this.indexFromXY(gy - 1, gx - 1));
                     indices.push(this.indexFromXY(gy - 0, gx - 0));
@@ -84,7 +92,8 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
             linearPoints.push(v.z);
         }
         var vertices = new Float32Array(linearPoints);
-        return { vertices: vertices, indices: indices };
+        var uv = new Float32Array(uvs);
+        return { vertices: vertices, uv: uv, indices: indices };
     };
     return TempleSpaceMapBuilder;
 }());
