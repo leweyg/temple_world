@@ -5,6 +5,7 @@ class TempleSpaceMapBuilder {
     scene : THREE.Object3D;
     parentScene : THREE.Object3D;
     surfaceShape = [ 7, 7 ];
+    texture : THREE.DataTexture;
     mesh : THREE.Mesh;
 
     constructor(parentScene:THREE.Object3D) {
@@ -13,10 +14,9 @@ class TempleSpaceMapBuilder {
         this.scene.name = "TempleSpaceMap"
         parentScene.add(this.scene);
 
-        const material = new THREE.MeshBasicMaterial( { 
-            color: 0x557755, 
-            //side:THREE.DoubleSide
-        } );
+        this.texture = this.mapGridTexture();
+
+        const material = this.mapGridShader();
 
         const data = this.mapGridVertices();
 
@@ -30,6 +30,73 @@ class TempleSpaceMapBuilder {
 
     indexFromXY(x:number,y:number) {
         return (y * this.surfaceShape[0]) + x;
+    }
+
+    mapGridTexture() {
+        // 1. Create a DataTexture
+        const height = this.surfaceShape[0];
+        const width = this.surfaceShape[1];
+        const size = width * height;
+        const data = new Uint8Array(4 * size); // RGBA data
+
+        for (let i = 0; i < size; i++) {
+            const stride = i * 4;
+            // Generate some random displacement values (e.g., grayscale noise)
+            const value = Math.floor(Math.random() * 255);
+            data[stride] = value;     // R
+            data[stride + 1] = value; // G
+            data[stride + 2] = value; // B
+            data[stride + 3] = 255;   // A
+        }
+
+        const displacementTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+        displacementTexture.needsUpdate = true;
+        return displacementTexture;
+    }
+
+    mapGridShader() {
+        const flatMaterial = new THREE.MeshBasicMaterial( { 
+            color: 0x557755, 
+            //side:THREE.DoubleSide
+        } );
+        //return flatMaterial;
+
+        const vertexShader = `
+    uniform sampler2D displacementTexture;
+    uniform float uTime;
+    varying vec2 vUv;
+
+    void main() {
+        vUv = uv;
+        vec4 displacement = texture2D(displacementTexture, uv);
+        
+        // Use the red channel of the texture for displacement
+        float displacementFactor = displacement.r * 2.0; 
+
+        // Apply displacement along the normal, optionally animated with time
+        vec3 displaceDir = vec3(0,1,0); // normal; 
+        vec3 displacedPosition = position + displaceDir * displacementFactor * sin(uTime * 2.0 + position.x * 5.0);
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+    }
+`;
+        const fragmentShader = `
+    varying vec2 vUv;
+
+    void main() {
+        gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);
+    }
+`;
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                displacementTexture: { value: this.texture },
+                uTime: { value: 0.0 }
+            },
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            side: THREE.DoubleSide // Important for seeing both sides of displaced geometry
+        });
+        return material;
     }
 
     mapGridVertices() {
