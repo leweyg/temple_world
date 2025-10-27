@@ -4,7 +4,7 @@ import * as THREE from 'three';
 class TempleSpaceMapBuilder {
     scene : THREE.Object3D;
     parentScene : THREE.Object3D;
-    surfaceShape = [ 7, 7 ];
+    surfaceShape = [ 64, 64 ];
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
@@ -66,7 +66,7 @@ class TempleSpaceMapBuilder {
             map : this.texture,
             //side:THREE.DoubleSide
         } );
-        return flatMaterial;
+        //return flatMaterial;
 
         const vertexShader = `
     uniform sampler2D displacementTexture;
@@ -78,11 +78,11 @@ class TempleSpaceMapBuilder {
         vec4 displacement = texture2D(displacementTexture, uv);
         
         // Use the red channel of the texture for displacement
-        float displacementFactor = displacement.r * 2.0; 
+        float displacementFactor = displacement.r * 1.0; 
 
         // Apply displacement along the normal, optionally animated with time
         vec3 displaceDir = vec3(0,1,0); // normal; 
-        vec3 displacedPosition = position + displaceDir * displacementFactor * sin(uTime * 2.0 + position.x * 5.0);
+        vec3 displacedPosition = position + displaceDir * displacementFactor;
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
     }
@@ -114,9 +114,10 @@ class TempleSpaceMapBuilder {
         const indices = [];
         const uvs = [];
         const gridShape = this.surfaceShape;
+        const posScale = 20.0 / this.surfaceShape[0];
         for (var gy=0; gy<gridShape[0]; gy++) {
             for (var gx=0; gx<gridShape[1]; gx++) {
-                points.push( new THREE.Vector3( gx, 0, -gy ) );
+                points.push( new THREE.Vector3( gx * posScale, 0, -gy * posScale ) );
                 uvs.push( gy / gridShape[0] );
                 uvs.push( gx / gridShape[1] ); // TODO: x/(shape-1)
 
