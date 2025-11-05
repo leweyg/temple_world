@@ -110,7 +110,10 @@ class TempleSpaceMapBuilder {
 
     void main() {
         vec4 displacement = texture2D(displacementTexture, vUv);
-        gl_FragColor = displacement; // + vec4( 0, 1, 0, 0 );
+        const vec4 lowerColor = vec4(0.5, 0.5, 0.5, 1.0);
+        const vec4 upperColor = vec4(1.0, 1.0, 1.0, 1.0);
+        vec4 baseColor = mix( lowerColor, upperColor, displacement.g );
+        gl_FragColor = baseColor; // + vec4( 0, 1, 0, 0 );
         //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);
     }
 `;

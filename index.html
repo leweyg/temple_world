@@ -33,7 +33,7 @@
 				font-size: small;
 			}
 	</style>
-	<body style="background-color: black;">
+	<body style="background-color: rgb(165, 165, 165);">
 		<div id="info">
 			<a href="about.html">Temple World</a>
 			<span id="main-local-host-menu" style="display: none;">
@@ -143,11 +143,15 @@
 
 				// renderer
 				var targetCanvas = main_canvas;
+				var bgShade = 161 / ( 255.0 * 2.0 );
+				var bgColor = new THREE.Color();
+				bgColor.set(bgShade, bgShade, bgShade);
 				renderer = new THREE.WebGLRenderer( {
 					canvas: targetCanvas,
 					antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setClearColor(bgColor)
 				//document.body.appendChild( renderer.domElement );
 
 				// scene
