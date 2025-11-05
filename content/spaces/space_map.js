@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 var TempleSpaceMapBuilder = /** @class */ (function () {
     function TempleSpaceMapBuilder(parentScene) {
-        this.surfaceShape = [64, 64];
+        this.surfaceShape = [128, 128];
+        this.flatScale = 150.0;
+        this.heightScale = 8.01;
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceMap";
@@ -18,6 +20,17 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
     }
     TempleSpaceMapBuilder.prototype.indexFromXY = function (x, y) {
         return (y * this.surfaceShape[0]) + x;
+    };
+    TempleSpaceMapBuilder.prototype.posFromXY = function (gx, gy, into) {
+        if (into === void 0) { into = undefined; }
+        var count = this.surfaceShape[0];
+        var posScale = this.flatScale / count;
+        var posHalf = -posScale * (count / 2);
+        if (!into) {
+            into = new THREE.Vector3();
+        }
+        into.set(posHalf + (gx * posScale), 0, ((posHalf) + (gy * posScale)) * 1.0);
+        return into;
     };
     TempleSpaceMapBuilder.prototype.mapGridTexture = function () {
         var loader = new THREE.TextureLoader();
@@ -48,8 +61,11 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
             //side:THREE.DoubleSide
         });
         //return flatMaterial;
-        var vertexShader = "\n    uniform sampler2D displacementTexture;\n    uniform float uTime;\n    varying vec2 vUv;\n\n    void main() {\n        vUv = uv;\n        vec4 displacement = texture2D(displacementTexture, uv);\n        \n        // Use the red channel of the texture for displacement\n        float displacementFactor = displacement.r * 1.0; \n\n        // Apply displacement along the normal, optionally animated with time\n        vec3 displaceDir = vec3(0,1,0); // normal; \n        vec3 displacedPosition = position + displaceDir * displacementFactor;\n        \n        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);\n    }\n";
-        var fragmentShader = "\n    uniform sampler2D displacementTexture;\n    varying vec2 vUv;\n\n    void main() {\n        vec4 displacement = texture2D(displacementTexture, vUv);\n        gl_FragColor = displacement; // vec4( displacement.r, 1, 0, 1 );\n        //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);\n    }\n";
+        var vertexConsts = ""
+            + "const float heightScale = " + this.heightScale + ";\n"
+            + "const float heightOffset = " + 1.01 + ";\n";
+        var vertexShader = vertexConsts + "\n    uniform sampler2D displacementTexture;\n    uniform float uTime;\n    varying vec2 vUv;\n\n    void main() {\n        vUv = uv;\n        vec4 displacement = texture2D(displacementTexture, uv);\n        \n        // Use the red channel of the texture for displacement\n        float displacementFactor = ( displacement.r * heightScale ) - heightOffset;\n\n        // Apply displacement along the normal, optionally animated with time\n        vec3 displaceDir = vec3(0,1,0); // normal; \n        vec3 displacedPosition = position + displaceDir * displacementFactor;\n        \n        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);\n    }\n";
+        var fragmentShader = "\n    uniform sampler2D displacementTexture;\n    varying vec2 vUv;\n\n    void main() {\n        vec4 displacement = texture2D(displacementTexture, vUv);\n        gl_FragColor = displacement; // + vec4( 0, 1, 0, 0 );\n        //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);\n    }\n";
         var material = new THREE.ShaderMaterial({
             uniforms: {
                 displacementTexture: { value: this.texture },
@@ -66,12 +82,14 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
         var indices = [];
         var uvs = [];
         var gridShape = this.surfaceShape;
-        var posScale = 20.0 / this.surfaceShape[0];
+        function inv1(v) {
+            return 1.0 - v;
+        }
         for (var gy = 0; gy < gridShape[0]; gy++) {
             for (var gx = 0; gx < gridShape[1]; gx++) {
-                points.push(new THREE.Vector3(gx * posScale, 0, -gy * posScale));
-                uvs.push(gy / gridShape[0]);
-                uvs.push(gx / gridShape[1]); // TODO: x/(shape-1)
+                points.push(this.posFromXY(gx, gy));
+                uvs.push((gx / gridShape[0]));
+                uvs.push(inv1(gy / gridShape[1])); // TODO: x/(shape-1)
                 if ((gx > 0) && (gy > 0)) {
                     indices.push(this.indexFromXY(gy - 1, gx - 1));
                     indices.push(this.indexFromXY(gy - 0, gx - 0));
@@ -80,9 +98,6 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
                     indices.push(this.indexFromXY(gy - 1, gx - 1));
                     indices.push(this.indexFromXY(gy - 0, gx - 1));
                 }
-                //points.push( new THREE.Vector3( gx - 1, 0, -gy ) );
-                //points.push( new THREE.Vector3( gx, 0, -gy - 1 ) );
-                //points.push( new THREE.Vector3( gx - 1, 0, -gy - 1 ) );
             }
         }
         var linearPoints = [];
