@@ -112,6 +112,14 @@ class TempleSpaceMapBuilder {
     varying vec2 vUv;
     varying vec3 vWorldPos;
 
+    const float gridPixelDeltaScale = 3.0;
+    const vec3  gridTileRepeat = vec3( 1.0, 2.0, 1.0 );
+    const float gridShadeXZ = 0.25;
+    const vec3  gridLightDir = normalize( vec3( 3, 1, 2 ) );
+    const float gridLightPower = 3.0;
+    const vec4  gridColorGeneral = vec4(0.25, 0.25, 0.25, 1.0);
+    const vec4  gridColorLine = vec4(1.0, 1.0, 1.0, 1.0);
+
     struct gridSample {
         vec3 worldPos;
         vec3 worldNormal;
@@ -126,7 +134,7 @@ class TempleSpaceMapBuilder {
         gridSample ans;
         ans.worldPos = worldPos;
         ans.worldNormal = normalize( cross( dx, dy ) );
-        float sd = 3.0;
+        float sd = gridPixelDeltaScale;
         ans.worldMin = min( worldPos, min( worldPos + dx*sd, worldPos + dy*sd ) );
         ans.worldMax = max( worldPos, max( worldPos + dx*sd, worldPos + dy*sd ) );
         return ans;
@@ -134,28 +142,26 @@ class TempleSpaceMapBuilder {
 
     float gridShadeFromWorldPos(gridSample gsample) {
         vec3 worldPos = gsample.worldPos;
-        vec3 gridScale = vec3( 1.0, 2.0, 1.0 );
+        vec3 gridScale = gridTileRepeat;
         vec3 unitMin = fract( gsample.worldMin * gridScale );
         vec3 unitMax = fract( gsample.worldMax * gridScale );
         //vec3 unitDist = clamp( 1.0 - abs( ( unitPos - 0.5 ) / 0.05 ), 0.0, 1.0 );
         const vec3 gridBias = vec3(0,0.01,0);
         vec3 unitDist = step( ( unitMax - unitMin ) + gridBias, vec3(0,0,0) );
-        float xzShade = 0.25;
-        float gridShade = clamp( unitDist.y + (xzShade * unitDist.x ) + (xzShade * unitDist.z), 0.0, 1.0);
+        float gridShade = clamp( unitDist.y + (gridShadeXZ * unitDist.x ) + (gridShadeXZ * unitDist.z), 0.0, 1.0);
         return gridShade; // vec4( gridShade, gridShade, gridShade, 1.0 );
     }
 
     float lightingForGridSample(gridSample gsample) {
-        const vec3 lightDir = normalize( vec3( 3, 1, 2 ) );
-        float nDotL = 1.0 - abs( dot( lightDir, gsample.worldNormal ) );
-        float lighting = pow( nDotL, 3.0 );
+        float nDotL = 1.0 - abs( dot( gridLightDir, gsample.worldNormal ) );
+        float lighting = pow( nDotL, gridLightPower );
         return lighting;
     }
 
     void main() {
         vec4 displacement = texture2D(displacementTexture, vUv);
-        const vec4 lowerColor = vec4(0.25, 0.25, 0.25, 1.0);
-        const vec4 upperColor = vec4(1.0, 1.0, 1.0, 1.0);
+        const vec4 lowerColor = gridColorGeneral;
+        const vec4 upperColor = gridColorLine;
         gridSample gsample = gridSampleForPixel();
         float gridShade = gridShadeFromWorldPos(gsample);
         float lightShade = lightingForGridSample(gsample);
