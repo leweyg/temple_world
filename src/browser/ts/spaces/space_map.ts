@@ -112,6 +112,21 @@ class TempleSpaceMapBuilder {
     varying vec2 vUv;
     varying vec3 vWorldPos;
 
+    struct gridSample {
+        vec3 worldNormal;
+        vec3 worldMin;
+        vec3 worldMax;
+    };
+
+    gridSample gridSampleForPixel() {
+        vec3 worldPos = vWorldPos.xyz;
+        vec3 dx = dFdx( worldPos );
+        vec3 dy = dFdy( worldPos );
+        gridSample ans;
+        ans.worldNormal = normalize( cross( dx, dy ) );
+        return ans;
+    }
+
     float gridShadeFromWorldPos() {
         vec3 worldPos = vWorldPos.xyz;
         vec3 unitPos = fract( worldPos * vec3( 1.0, 2.0, 1.0 ) );
@@ -121,15 +136,22 @@ class TempleSpaceMapBuilder {
         return gridShade; // vec4( gridShade, gridShade, gridShade, 1.0 );
     }
 
+    float lightingForGridSample(gridSample gsample) {
+        vec3 lightDir = normalize( vec3( 1, 1, 1 ) );
+        float nDotL = 1.0 - abs( dot( lightDir, gsample.worldNormal ) );
+        float lighting = pow( nDotL, 3.0 );
+        return lighting;
+    }
+
     void main() {
         vec4 displacement = texture2D(displacementTexture, vUv);
-        const vec4 lowerColor = vec4(0.5, 0.5, 0.5, 1.0);
+        const vec4 lowerColor = vec4(0.25, 0.25, 0.25, 1.0);
         const vec4 upperColor = vec4(1.0, 1.0, 1.0, 1.0);
-        float shade = gridShadeFromWorldPos();
-        vec4 baseColor = mix( lowerColor, upperColor, shade );
-        //vec4 baseColor = colorFromWorldPos();
+        float gridShade = gridShadeFromWorldPos();
+        gridSample gsample = gridSampleForPixel();
+        float lightShade = lightingForGridSample(gsample);
+        vec4 baseColor = mix( lowerColor, upperColor, gridShade ) * lightShade;
         gl_FragColor = baseColor; // + vec4( 0, 1, 0, 0 );
-        //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);
     }
 `;
         const material = new THREE.ShaderMaterial({
