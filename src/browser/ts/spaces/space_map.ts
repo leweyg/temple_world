@@ -89,6 +89,7 @@ class TempleSpaceMapBuilder {
     uniform sampler2D displacementTexture;
     uniform float uTime;
     varying vec2 vUv;
+    varying vec3 vWorldPos;
 
     void main() {
         vUv = uv;
@@ -101,18 +102,32 @@ class TempleSpaceMapBuilder {
         vec3 displaceDir = vec3(0,1,0); // normal; 
         vec3 displacedPosition = position + displaceDir * displacementFactor;
         
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+        vec4 worldPos = modelMatrix * vec4(displacedPosition, 1.0);
+        vWorldPos = worldPos.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
     }
 `;
         const fragmentShader = `
     uniform sampler2D displacementTexture;
     varying vec2 vUv;
+    varying vec3 vWorldPos;
+
+    float gridShadeFromWorldPos() {
+        vec3 worldPos = vWorldPos.xyz;
+        vec3 unitPos = fract( worldPos * vec3( 1.0, 2.0, 1.0 ) );
+        vec3 unitDist = clamp( 1.0 - abs( ( unitPos - 0.5 ) / 0.05 ), 0.0, 1.0 );
+        float xzShade = 0.25;
+        float gridShade = clamp( unitDist.y + (xzShade * unitDist.x ) + (xzShade * unitDist.z), 0.0, 1.0);
+        return gridShade; // vec4( gridShade, gridShade, gridShade, 1.0 );
+    }
 
     void main() {
         vec4 displacement = texture2D(displacementTexture, vUv);
         const vec4 lowerColor = vec4(0.5, 0.5, 0.5, 1.0);
         const vec4 upperColor = vec4(1.0, 1.0, 1.0, 1.0);
-        vec4 baseColor = mix( lowerColor, upperColor, displacement.g );
+        float shade = gridShadeFromWorldPos();
+        vec4 baseColor = mix( lowerColor, upperColor, shade );
+        //vec4 baseColor = colorFromWorldPos();
         gl_FragColor = baseColor; // + vec4( 0, 1, 0, 0 );
         //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(vUv.x * 10.0), 1.0);
     }
