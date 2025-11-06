@@ -148,7 +148,8 @@ class TempleSpaceMapBuilder {
         //vec3 unitDist = clamp( 1.0 - abs( ( unitPos - 0.5 ) / 0.05 ), 0.0, 1.0 );
         const vec3 gridBias = vec3(0,0.01,0);
         vec3 unitDist = step( ( unitMax - unitMin ) + gridBias, vec3(0,0,0) );
-        float gridShade = clamp( unitDist.y + (gridShadeXZ * unitDist.x ) + (gridShadeXZ * unitDist.z), 0.0, 1.0);
+        float gridMax = max( max( unitDist.y, gridShadeXZ * unitDist.x ), gridShadeXZ * unitDist.z );
+        float gridShade = clamp( gridMax, 0.0, 1.0 );
         return gridShade; // vec4( gridShade, gridShade, gridShade, 1.0 );
     }
 
