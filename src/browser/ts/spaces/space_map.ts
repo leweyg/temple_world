@@ -113,6 +113,7 @@ class TempleSpaceMapBuilder {
     varying vec3 vWorldPos;
 
     struct gridSample {
+        vec3 worldPos;
         vec3 worldNormal;
         vec3 worldMin;
         vec3 worldMax;
@@ -123,21 +124,28 @@ class TempleSpaceMapBuilder {
         vec3 dx = dFdx( worldPos );
         vec3 dy = dFdy( worldPos );
         gridSample ans;
+        ans.worldPos = worldPos;
         ans.worldNormal = normalize( cross( dx, dy ) );
+        float sd = 3.0;
+        ans.worldMin = min( worldPos, min( worldPos + dx*sd, worldPos + dy*sd ) );
+        ans.worldMax = max( worldPos, max( worldPos + dx*sd, worldPos + dy*sd ) );
         return ans;
     }
 
-    float gridShadeFromWorldPos() {
-        vec3 worldPos = vWorldPos.xyz;
-        vec3 unitPos = fract( worldPos * vec3( 1.0, 2.0, 1.0 ) );
-        vec3 unitDist = clamp( 1.0 - abs( ( unitPos - 0.5 ) / 0.05 ), 0.0, 1.0 );
+    float gridShadeFromWorldPos(gridSample gsample) {
+        vec3 worldPos = gsample.worldPos;
+        vec3 gridScale = vec3( 1.0, 2.0, 1.0 );
+        vec3 unitMin = fract( gsample.worldMin * gridScale );
+        vec3 unitMax = fract( gsample.worldMax * gridScale );
+        //vec3 unitDist = clamp( 1.0 - abs( ( unitPos - 0.5 ) / 0.05 ), 0.0, 1.0 );
+        vec3 unitDist = step( unitMax - unitMin, vec3(0,0,0) );
         float xzShade = 0.25;
         float gridShade = clamp( unitDist.y + (xzShade * unitDist.x ) + (xzShade * unitDist.z), 0.0, 1.0);
         return gridShade; // vec4( gridShade, gridShade, gridShade, 1.0 );
     }
 
     float lightingForGridSample(gridSample gsample) {
-        vec3 lightDir = normalize( vec3( 1, 1, 1 ) );
+        const vec3 lightDir = normalize( vec3( 3, 1, 2 ) );
         float nDotL = 1.0 - abs( dot( lightDir, gsample.worldNormal ) );
         float lighting = pow( nDotL, 3.0 );
         return lighting;
@@ -147,10 +155,11 @@ class TempleSpaceMapBuilder {
         vec4 displacement = texture2D(displacementTexture, vUv);
         const vec4 lowerColor = vec4(0.25, 0.25, 0.25, 1.0);
         const vec4 upperColor = vec4(1.0, 1.0, 1.0, 1.0);
-        float gridShade = gridShadeFromWorldPos();
         gridSample gsample = gridSampleForPixel();
+        float gridShade = gridShadeFromWorldPos(gsample);
         float lightShade = lightingForGridSample(gsample);
         vec4 baseColor = mix( lowerColor, upperColor, gridShade ) * lightShade;
+        //vec4 baseColor = vec4( abs(gsample.worldNormal), 1.0 );
         gl_FragColor = baseColor; // + vec4( 0, 1, 0, 0 );
     }
 `;
