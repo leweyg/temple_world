@@ -40,8 +40,8 @@ var TempleFieldPrimeShapeType = /** @class */ (function (_super) {
         return this.internalMakeDataSync(resTree, resTree.tree_parent.ensureInstance().asObject3D());
     };
     TempleFieldPrimeShapeType.prototype.internalMakeDataSync = function (resTree, parent) {
-        var geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
-        var matDefault = new THREE.MeshToonMaterial({ color: 0x00FF00 });
+        var geo = new THREE.BoxGeometry(1.61, 0.6, 2.2);
+        var matDefault = new THREE.MeshToonMaterial({ color: 0x9988FF });
         var matCentered = new THREE.MeshToonMaterial({ color: 0xccCCcc });
         var matHeld = new THREE.MeshToonMaterial({ color: 0x0000FF });
         var res = {

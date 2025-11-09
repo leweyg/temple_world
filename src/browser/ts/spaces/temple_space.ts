@@ -31,7 +31,7 @@ class TempleSpace {
             new TempleSpaceDirectionsBuilder(k);
         });
         this.registerLevelByCallback("Map", k => {
-            new TempleSpaceMapBuilder(k);
+            //new TempleSpaceMapBuilder(k);
         });
         this.registerLevelByCallback("Sand", k => {
             new TempleSpaceSandBuilder(k, world);
@@ -50,7 +50,7 @@ class TempleSpace {
         }, true);
         this.ensureLevel("Floor");
         this.ensureLevel("TrainingBoxes");
-        this.ensureLevel("Map");
+        //this.ensureLevel("Map");
         this.ensureLevel("Sand");
 
         const testUnload = false;

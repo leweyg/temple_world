@@ -26,8 +26,8 @@ class TempleFieldPrimeShapeType extends ResourceType {
         
     }
     internalMakeDataSync(resTree:ResourceTree, parent:THREE.Object3D):ResourceInstance {
-        const geo = new THREE.BoxGeometry(1.61, 0.15, 1.61);
-        const matDefault = new THREE.MeshToonMaterial({color:0x00FF00});
+        const geo = new THREE.BoxGeometry(1.61, 0.6, 2.2);
+        const matDefault = new THREE.MeshToonMaterial({color:0x9988FF});
         const matCentered = new THREE.MeshToonMaterial({color:0xccCCcc});
         const matHeld= new THREE.MeshToonMaterial({color:0x0000FF});
         var res : TempleFieldGeoData = {

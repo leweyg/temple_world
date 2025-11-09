@@ -8,7 +8,7 @@ var TempleLights = /** @class */ (function () {
         parentScene.add(this.targetObject);
         this.directionalLight.target = this.targetObject;
         this.directionalLight.position.set(0, 0, 0);
-        this.targetObject.position.set(-1, -1, -1);
+        this.targetObject.position.set(-1, -2, 1);
         this.setMainIntensity(0.61);
     }
     TempleLights.prototype.setMainIntensity = function (intensity) {

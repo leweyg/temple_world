@@ -5,7 +5,7 @@ var SpaceTrainingBoxes = /** @class */ (function () {
         var node = this.res.ensureInstance().asObject3D();
         this.prim = new TempleFieldPrimeShape(node, this.res);
         this.prim.instanceAsync(node)
-            .then(function (k) { return k.asObject3D().position.set(4.0, 0.5, -2.0); });
+            .then(function (k) { return k.asObject3D().position.set(-2.2, 0.5, -4.8); });
     }
     return SpaceTrainingBoxes;
 }());
