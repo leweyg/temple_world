@@ -112,7 +112,7 @@ class TempleSpaceMapBuilder {
     varying vec2 vUv;
     varying vec3 vWorldPos;
 
-    const float gridPixelDeltaScale = 3.0;
+    const float gridPixelDeltaScale = 1.5;
     const vec3  gridTileRepeat = vec3( 1.0, 2.0, 1.0 );
     const float gridShadeXZ = 0.25;
     const vec3  gridLightDir = normalize( vec3( 3, 1, 2 ) );
@@ -135,8 +135,14 @@ class TempleSpaceMapBuilder {
         ans.worldPos = worldPos;
         ans.worldNormal = normalize( cross( dx, dy ) );
         float sd = gridPixelDeltaScale;
-        ans.worldMin = min( worldPos, min( worldPos + dx*sd, worldPos + dy*sd ) );
-        ans.worldMax = max( worldPos, max( worldPos + dx*sd, worldPos + dy*sd ) );
+        ans.worldMin = min(
+            min( worldPos - dx*sd, worldPos - dy*sd ),
+            min( worldPos + dx*sd, worldPos + dy*sd )
+            );
+        ans.worldMax = max( 
+            max( worldPos - dx*sd, worldPos - dy*sd ),
+            max( worldPos + dx*sd, worldPos + dy*sd )
+            );
         return ans;
     }
 
