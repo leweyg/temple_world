@@ -1,12 +1,15 @@
 import * as THREE from 'three';
 var TempleSpaceSandBuilder = /** @class */ (function () {
-    function TempleSpaceSandBuilder(parentScene) {
+    function TempleSpaceSandBuilder(parentScene, world) {
         // "shape": [48, 32, 64]
         this.surfaceShape = [32, 64];
+        this.displacementTexture = null;
+        this.displaceData = null;
         this.flatScale = 5.0;
         this.heightScale = 4.01;
         this.forwardBias = -5.0;
         this.sideBias = -2.0;
+        this.timeLastUpdated = 0.0;
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceMap";
@@ -20,6 +23,10 @@ var TempleSpaceSandBuilder = /** @class */ (function () {
         geometry.setIndex(data.indices);
         this.mesh = new THREE.Mesh(geometry, this.mainMaterial);
         this.scene.add(this.mesh);
+        var _this = this;
+        world.time.listenToTime(function (time) {
+            _this.mapGridTick(time);
+        });
     }
     TempleSpaceSandBuilder.prototype.indexFromXY = function (y, x) {
         return (y * this.surfaceShape[1]) + x;
@@ -35,30 +42,61 @@ var TempleSpaceSandBuilder = /** @class */ (function () {
         into.set(this.sideBias + posHalf + (gx * posScale), 0, this.forwardBias + ((posHalf) + (gy * posScale)) * 1.0);
         return into;
     };
+    TempleSpaceSandBuilder.prototype.mapGridTick = function (time) {
+        if (!this.displacementTexture)
+            return;
+        if (!this.displaceData)
+            return;
+        if (!time)
+            return;
+        // Check if virtual frame has passed:
+        var replayFrameRate = 7.0;
+        var curTime = time.timeVirtualCurrent;
+        var curFrame = Math.floor(curTime * replayFrameRate);
+        if (curFrame == this.timeLastUpdated) {
+            return;
+        }
+        this.timeLastUpdated = curFrame;
+        // Update array data:
+        var ar = this.displacementTexture.image.data;
+        var height = this.surfaceShape[0];
+        var width = this.surfaceShape[1];
+        var size = width * height;
+        var stride = 4;
+        var ch_sand = 1;
+        for (var y = 0; y < height; y++) {
+            for (var x = 0; x < width; x++) {
+                var i = ((x + (y * width)) * stride) + ch_sand;
+                this.displaceData[i] = Math.floor(128 + (Math.random() * 20));
+            }
+        }
+        this.displacementTexture.needsUpdate = true;
+    };
     TempleSpaceSandBuilder.prototype.mapGridTexture = function () {
         var loader = new THREE.TextureLoader();
         //const image = loader.load('content/images/sfbay_height.png'); 
         // content/images/sand_sim_out.gif
         // content/images/sand_sim_out.json
-        var image = loader.load('content/images/sand_sim_out.gif');
-        return image;
+        //const image = loader.load('content/images/sand_sim_out.gif'); 
+        //return image;
         // 1. Create a DataTexture
         var height = this.surfaceShape[0];
         var width = this.surfaceShape[1];
         var size = width * height;
         var data = new Uint8Array(4 * size); // RGBA data
+        this.displaceData = data;
         for (var i = 0; i < size; i++) {
             var stride = i * 4;
             // Generate some random displacement values (e.g., grayscale noise)
-            var value = Math.floor(Math.random() * 255);
+            var value = Math.floor(128 + (Math.random() * 20));
             data[stride] = value; // R
             data[stride + 1] = value; // G
             data[stride + 2] = value; // B
             data[stride + 3] = 255; // A
         }
-        var displacementTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
-        displacementTexture.needsUpdate = true;
-        return displacementTexture;
+        this.displacementTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+        this.displacementTexture.needsUpdate = true;
+        return this.displacementTexture;
     };
     TempleSpaceSandBuilder.prototype.mapGridShader = function () {
         var flatMaterial = new THREE.MeshBasicMaterial({

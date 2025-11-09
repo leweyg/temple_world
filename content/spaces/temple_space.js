@@ -24,7 +24,7 @@ var TempleSpace = /** @class */ (function () {
             new TempleSpaceMapBuilder(k);
         });
         this.registerLevelByCallback("Sand", function (k) {
-            new TempleSpaceSandBuilder(k);
+            new TempleSpaceSandBuilder(k, world);
         });
         this.registerLevelByCallback("KalaChakra", function (k) {
             new TempleSpaceKalaChakra(k);

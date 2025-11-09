@@ -34,7 +34,7 @@ class TempleSpace {
             new TempleSpaceMapBuilder(k);
         });
         this.registerLevelByCallback("Sand", k => {
-            new TempleSpaceSandBuilder(k);
+            new TempleSpaceSandBuilder(k, world);
         });
         this.registerLevelByCallback("KalaChakra", k => {
             new TempleSpaceKalaChakra(k);

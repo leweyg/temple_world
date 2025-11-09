@@ -1,5 +1,8 @@
 
 import * as THREE from 'three';
+import { TempleWorld } from '../temple_world.js';
+import { TempleTime } from '../temple_time.js';
+
 
 class TempleSpaceSandBuilder {
     scene : THREE.Object3D;
@@ -9,12 +12,15 @@ class TempleSpaceSandBuilder {
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
+    displacementTexture : THREE.DataTexture|null = null;
+    displaceData : Uint8Array|null = null;
     flatScale = 5.0;
     heightScale = 4.01;
     forwardBias = -5.0;
     sideBias = -2.0;
+    timeLastUpdated = 0.0;
 
-    constructor(parentScene:THREE.Object3D) {
+    constructor(parentScene:THREE.Object3D, world:TempleWorld) {
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceMap"
@@ -33,6 +39,11 @@ class TempleSpaceSandBuilder {
 
         this.mesh = new THREE.Mesh( geometry, this.mainMaterial );
         this.scene.add( this.mesh );
+
+        const _this = this;
+        world.time.listenToTime((time:TempleTime) => {
+            _this.mapGridTick(time);
+        });
     }
 
     indexFromXY(y:number,x:number) {
@@ -50,33 +61,64 @@ class TempleSpaceSandBuilder {
         return into;
     }
 
+    mapGridTick(time:TempleTime) {
+        if (!this.displacementTexture) return;
+        if (!this.displaceData) return;
+        if (!time) return;
+
+        // Check if virtual frame has passed:
+        const replayFrameRate = 7.0;
+        const curTime = time.timeVirtualCurrent;
+        const curFrame = Math.floor( curTime * replayFrameRate );
+        if (curFrame == this.timeLastUpdated) {
+            return;
+        }
+        this.timeLastUpdated = curFrame;
+
+        // Update array data:
+        const ar = this.displacementTexture.image.data;
+        const height = this.surfaceShape[0];
+        const width = this.surfaceShape[1];
+        const size = width * height;
+        const stride = 4;
+        const ch_sand = 1;
+        for (var y=0; y<height; y++) {
+            for (var x=0; x<width; x++) {
+                const i = ((x + (y * width)) * stride) + ch_sand;
+                this.displaceData[i] = Math.floor(128 + (Math.random() * 20));
+            }
+        }
+        this.displacementTexture.needsUpdate = true;
+    }
+
     mapGridTexture() {
         const loader = new THREE.TextureLoader();
         //const image = loader.load('content/images/sfbay_height.png'); 
         // content/images/sand_sim_out.gif
         // content/images/sand_sim_out.json
-        const image = loader.load('content/images/sand_sim_out.gif'); 
-        return image;
+        //const image = loader.load('content/images/sand_sim_out.gif'); 
+        //return image;
 
         // 1. Create a DataTexture
         const height = this.surfaceShape[0];
         const width = this.surfaceShape[1];
         const size = width * height;
         const data = new Uint8Array(4 * size); // RGBA data
+        this.displaceData = data;
 
         for (let i = 0; i < size; i++) {
             const stride = i * 4;
             // Generate some random displacement values (e.g., grayscale noise)
-            const value = Math.floor(Math.random() * 255);
+            const value = Math.floor(128 + (Math.random() * 20));
             data[stride] = value;     // R
             data[stride + 1] = value; // G
             data[stride + 2] = value; // B
             data[stride + 3] = 255;   // A
         }
 
-        const displacementTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
-        displacementTexture.needsUpdate = true;
-        return displacementTexture;
+        this.displacementTexture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+        this.displacementTexture.needsUpdate = true;
+        return this.displacementTexture;
     }
 
     mapGridShader() {
