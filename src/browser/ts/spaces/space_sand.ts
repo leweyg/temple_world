@@ -4,12 +4,15 @@ import * as THREE from 'three';
 class TempleSpaceSandBuilder {
     scene : THREE.Object3D;
     parentScene : THREE.Object3D;
-    surfaceShape = [ 128, 128 ];
+    // "shape": [48, 32, 64]
+    surfaceShape = [ 32, 64 ];
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
-    flatScale = 7.0;
+    flatScale = 5.0;
     heightScale = 4.01;
+    forwardBias = -5.0;
+    sideBias = -2.0;
 
     constructor(parentScene:THREE.Object3D) {
         this.parentScene = parentScene;
@@ -32,8 +35,8 @@ class TempleSpaceSandBuilder {
         this.scene.add( this.mesh );
     }
 
-    indexFromXY(x:number,y:number) {
-        return (y * this.surfaceShape[0]) + x;
+    indexFromXY(y:number,x:number) {
+        return (y * this.surfaceShape[1]) + x;
     }
 
     posFromXY(gx:number, gy:number, into:THREE.Vector3|undefined=undefined) {
@@ -43,7 +46,7 @@ class TempleSpaceSandBuilder {
         if (!into) {
             into = new THREE.Vector3();
         }
-        into.set( posHalf + ( gx * posScale ), 0, ( ( posHalf) + ( gy * posScale ) ) * 1.0 );
+        into.set( this.sideBias + posHalf + ( gx * posScale ), 0, this.forwardBias + ( ( posHalf) + ( gy * posScale ) ) * 1.0 );
         return into;
     }
 
@@ -204,8 +207,8 @@ class TempleSpaceSandBuilder {
         for (var gy=0; gy<gridShape[0]; gy++) {
             for (var gx=0; gx<gridShape[1]; gx++) {
                 points.push( this.posFromXY(gx,gy) );
-                uvs.push( ( gx / gridShape[0] ) );
-                uvs.push( inv1( gy / gridShape[1] ) ); // TODO: x/(shape-1)
+                uvs.push( ( gx / gridShape[1] ) );
+                uvs.push( inv1( gy / gridShape[0] ) ); // TODO: x/(shape-1)
 
                 if ((gx>0) && (gy > 0)) {
                     indices.push( this.indexFromXY(gy-1,gx-1));

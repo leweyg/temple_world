@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 var TempleSpaceSandBuilder = /** @class */ (function () {
     function TempleSpaceSandBuilder(parentScene) {
-        this.surfaceShape = [128, 128];
-        this.flatScale = 7.0;
+        // "shape": [48, 32, 64]
+        this.surfaceShape = [32, 64];
+        this.flatScale = 5.0;
         this.heightScale = 4.01;
+        this.forwardBias = -5.0;
+        this.sideBias = -2.0;
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceMap";
@@ -18,8 +21,8 @@ var TempleSpaceSandBuilder = /** @class */ (function () {
         this.mesh = new THREE.Mesh(geometry, this.mainMaterial);
         this.scene.add(this.mesh);
     }
-    TempleSpaceSandBuilder.prototype.indexFromXY = function (x, y) {
-        return (y * this.surfaceShape[0]) + x;
+    TempleSpaceSandBuilder.prototype.indexFromXY = function (y, x) {
+        return (y * this.surfaceShape[1]) + x;
     };
     TempleSpaceSandBuilder.prototype.posFromXY = function (gx, gy, into) {
         if (into === void 0) { into = undefined; }
@@ -29,7 +32,7 @@ var TempleSpaceSandBuilder = /** @class */ (function () {
         if (!into) {
             into = new THREE.Vector3();
         }
-        into.set(posHalf + (gx * posScale), 0, ((posHalf) + (gy * posScale)) * 1.0);
+        into.set(this.sideBias + posHalf + (gx * posScale), 0, this.forwardBias + ((posHalf) + (gy * posScale)) * 1.0);
         return into;
     };
     TempleSpaceSandBuilder.prototype.mapGridTexture = function () {
@@ -91,8 +94,8 @@ var TempleSpaceSandBuilder = /** @class */ (function () {
         for (var gy = 0; gy < gridShape[0]; gy++) {
             for (var gx = 0; gx < gridShape[1]; gx++) {
                 points.push(this.posFromXY(gx, gy));
-                uvs.push((gx / gridShape[0]));
-                uvs.push(inv1(gy / gridShape[1])); // TODO: x/(shape-1)
+                uvs.push((gx / gridShape[1]));
+                uvs.push(inv1(gy / gridShape[0])); // TODO: x/(shape-1)
                 if ((gx > 0) && (gy > 0)) {
                     indices.push(this.indexFromXY(gy - 1, gx - 1));
                     indices.push(this.indexFromXY(gy - 0, gx - 0));
