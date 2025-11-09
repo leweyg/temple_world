@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { TempleSpaceDirectionsBuilder } from './space_directions.js'
 import { TempleLights } from './space_lights.js'
 import { TempleSpaceMapBuilder } from './space_map.js'
+import { TempleSpaceSandBuilder } from './space_sand.js'
 import { TempleSpaceKalaChakra } from './space_kalachakra.js'
 import { TempleSpaceCodaChakra } from './space_codachakra.js'
 import { ResourceTree } from '../code/resource_tree.js';
@@ -32,6 +33,9 @@ class TempleSpace {
         this.registerLevelByCallback("Map", k => {
             new TempleSpaceMapBuilder(k);
         });
+        this.registerLevelByCallback("Sand", k => {
+            new TempleSpaceSandBuilder(k);
+        });
         this.registerLevelByCallback("KalaChakra", k => {
             new TempleSpaceKalaChakra(k);
         }, true);
@@ -47,6 +51,7 @@ class TempleSpace {
         this.ensureLevel("Floor");
         this.ensureLevel("TrainingBoxes");
         this.ensureLevel("Map");
+        this.ensureLevel("Sand");
 
         const testUnload = false;
         if (testUnload) {
