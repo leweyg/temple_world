@@ -8,8 +8,8 @@ class TempleSpaceMapBuilder {
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
-    flatScale = 150.0;
-    heightScale = 8.01;
+    flatScale = 7.0;
+    heightScale = 4.01;
 
     constructor(parentScene:THREE.Object3D) {
         this.parentScene = parentScene;
@@ -49,7 +49,9 @@ class TempleSpaceMapBuilder {
 
     mapGridTexture() {
         const loader = new THREE.TextureLoader();
-        const image = loader.load('content/images/sfbay_height.png'); 
+        //const image = loader.load('content/images/sfbay_height.png'); 
+        // content/images/sand_sim_out.gif
+        const image = loader.load('content/images/sand_sim_out.gif'); 
         return image;
 
         // 1. Create a DataTexture
@@ -83,7 +85,7 @@ class TempleSpaceMapBuilder {
 
         const vertexConsts = ""
         + "const float heightScale = " + this.heightScale + ";\n"
-        + "const float heightOffset = " + 1.01 + ";\n";
+        + "const float heightOffset = " + 2.01 + ";\n";
 
         const vertexShader = vertexConsts + `
     uniform sampler2D displacementTexture;
@@ -96,7 +98,7 @@ class TempleSpaceMapBuilder {
         vec4 displacement = texture2D(displacementTexture, uv);
         
         // Use the red channel of the texture for displacement
-        float displacementFactor = ( displacement.r * heightScale ) - heightOffset;
+        float displacementFactor = ( displacement.g * heightScale ) - heightOffset;
 
         // Apply displacement along the normal, optionally animated with time
         vec3 displaceDir = vec3(0,1,0); // normal; 
@@ -113,7 +115,7 @@ class TempleSpaceMapBuilder {
     varying vec3 vWorldPos;
 
     const float gridPixelDeltaScale = 1.5;
-    const vec3  gridTileRepeat = vec3( 1.0, 2.0, 1.0 );
+    const vec3  gridTileRepeat = vec3( 1.0, 12.0, 1.0 );
     const float gridShadeXZ = 0.25;
     const vec3  gridLightDir = normalize( vec3( 3, 1, 2 ) );
     const float gridLightPower = 3.0;
