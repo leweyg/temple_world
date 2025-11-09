@@ -12,6 +12,7 @@ var TempleSpaceDirectionsBuilder = /** @class */ (function () {
         var geometry = new THREE.BufferGeometry().setFromPoints(points);
         this.lines = new THREE.Line(geometry, material);
         this.scene.add(this.lines);
+        this.lines.visible = false;
     }
     TempleSpaceDirectionsBuilder.prototype.addDirectionLines = function (points, radius) {
         if (radius === void 0) { radius = 1.0; }

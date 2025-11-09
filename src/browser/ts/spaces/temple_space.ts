@@ -28,7 +28,7 @@ class TempleSpace {
         this.levels = world.resourceRoot.subResourceSceneClean("ActiveSpaces", this.scene);
         this.resources = this.levels;
         this.registerLevelByCallback("Floor", k => {
-            new TempleSpaceDirectionsBuilder(k);
+            //new TempleSpaceDirectionsBuilder(k);
         });
         this.registerLevelByCallback("Map", k => {
             //new TempleSpaceMapBuilder(k);
@@ -37,16 +37,16 @@ class TempleSpace {
             new TempleSpaceSandBuilder(k, world);
         });
         this.registerLevelByCallback("KalaChakra", k => {
-            new TempleSpaceKalaChakra(k);
+            //new TempleSpaceKalaChakra(k);
         }, true);
         this.registerLevelByCallback("CodaChakra", k => {
-            new TempleSpaceCodaChakra(k);
+            //new TempleSpaceCodaChakra(k);
         }, true);
         this.registerLevelByCallback("TrainingBoxes", k => {
             new SpaceTrainingBoxes(k, this.resources);
         }, true);
         this.registerLevelByCallback("SpaceEastAltar0", k => {
-            new SpaceEastAltar0(k, this.resources);
+            //new SpaceEastAltar0(k, this.resources);
         }, true);
         this.ensureLevel("Floor");
         this.ensureLevel("TrainingBoxes");

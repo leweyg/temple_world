@@ -91,7 +91,7 @@ class TempleSpaceSandBuilder {
         const frameCount = this.jsonFrames.shape[0];
 
         // Check if virtual frame has passed:
-        const replayFrameRate = 7.0;
+        const replayFrameRate = 10.0;
         const curTime = time.timeVirtualCurrent;
         const curFrame = Math.floor( curTime * replayFrameRate ) % frameCount;
         if (curFrame == this.timeLastUpdated) {
@@ -189,11 +189,13 @@ class TempleSpaceSandBuilder {
     varying vec3 vWorldPos;
 
     const float gridPixelDeltaScale = 1.5;
-    const vec3  gridTileRepeat = vec3( 1.0, 12.0, 1.0 );
+    const vec3  gridTileRepeat = vec3( 1.0, 6.0, 1.0 );
     const float gridShadeXZ = 0.25;
     const vec3  gridLightDir = normalize( vec3( 3, 1, 2 ) );
-    const float gridLightPower = 3.0;
-    const vec4  gridColorGeneral = vec4(0.25, 0.25, 0.25, 1.0);
+    const float gridLightPower = 1.0;
+    const vec4  earthColorDown = vec4(0.25, 0.25, 0.25, 1.0);
+    const vec4  earthColorCenter = vec4(0.25, 0.5, 0.25, 1.0);
+    const vec4  earthColorUppr = vec4(0.25, 1.0, 0.25, 1.0);
     const vec4  gridColorLine = vec4(1.0, 1.0, 1.0, 1.0);
 
     struct gridSample {
@@ -243,13 +245,15 @@ class TempleSpaceSandBuilder {
 
     void main() {
         vec4 displacement = texture2D(displacementTexture, vUv);
-        const vec4 lowerColor = gridColorGeneral;
-        const vec4 upperColor = gridColorLine;
         gridSample gsample = gridSampleForPixel();
         float gridShade = gridShadeFromWorldPos(gsample);
         //if (gridShade < 0.25) discard; // optional wireframe view
         float lightShade = lightingForGridSample(gsample);
-        vec4 baseColor = mix( lowerColor, upperColor, gridShade ) * lightShade;
+        float aboveMin = ((displacement.g * 255.0) - 124.0) - 6.0;
+        float earthHeight = aboveMin / 40.0;
+        vec4 earchDeep = mix( earthColorCenter, earthColorDown, clamp( -earthHeight * 8.0, 0.0, 1.0 ) );
+        vec4 earthColor = mix( earchDeep, earthColorUppr, clamp( earthHeight, 0.0, 1.0 ) );
+        vec4 baseColor = mix( earthColor, gridColorLine, gridShade ); // * lightShade;
         //vec4 baseColor = vec4( abs(gsample.worldNormal), 1.0 );
         gl_FragColor = baseColor; // + vec4( 0, 1, 0, 0 );
     }

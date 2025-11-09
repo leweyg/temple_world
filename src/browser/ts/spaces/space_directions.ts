@@ -22,6 +22,7 @@ class TempleSpaceDirectionsBuilder {
 
         this.lines = new THREE.Line( geometry, material );
         this.scene.add( this.lines );
+        this.lines.visible = false;
     }
 
     addDirectionLines(points:Array<THREE.Vector3>, radius = 1.0) {
