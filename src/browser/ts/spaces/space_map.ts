@@ -171,6 +171,7 @@ class TempleSpaceMapBuilder {
         const vec4 upperColor = gridColorLine;
         gridSample gsample = gridSampleForPixel();
         float gridShade = gridShadeFromWorldPos(gsample);
+        //if (gridShade < 0.25) discard; // optional wireframe view
         float lightShade = lightingForGridSample(gsample);
         vec4 baseColor = mix( lowerColor, upperColor, gridShade ) * lightShade;
         //vec4 baseColor = vec4( abs(gsample.worldNormal), 1.0 );
