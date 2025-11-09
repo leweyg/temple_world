@@ -14,6 +14,7 @@ class TempleSpaceSandBuilder {
     mainMaterial : THREE.Material;
     displacementTexture : THREE.DataTexture|null = null;
     displaceData : Uint8Array|null = null;
+    jsonFrames : any = null;
     flatScale = 5.0;
     heightScale = 4.01;
     forwardBias = -5.0;
@@ -44,6 +45,26 @@ class TempleSpaceSandBuilder {
         world.time.listenToTime((time:TempleTime) => {
             _this.mapGridTick(time);
         });
+        async function fetchJson(path:string) {
+            try {
+                const resp = await fetch(path);
+                if (!resp.ok) {
+                    throw new Error("Json load error:" + resp.statusText);
+                }
+                const jsonData = await resp.json();
+                return jsonData;
+            } catch (err) {
+                console.error(`Json fetch error: `,err);
+            }
+        }
+        fetchJson("content/images/sand_sim_out.json")
+            .then((data) => {
+                this.jsonFrames = data;
+                console.log("Json loaded:", data.shape);
+            })
+            .catch((err) => {
+                console.log("Json download error:", err);
+            });
     }
 
     indexFromXY(y:number,x:number) {
@@ -65,18 +86,22 @@ class TempleSpaceSandBuilder {
         if (!this.displacementTexture) return;
         if (!this.displaceData) return;
         if (!time) return;
+        if (!this.jsonFrames) return;
+
+        const frameCount = this.jsonFrames.shape[0];
 
         // Check if virtual frame has passed:
         const replayFrameRate = 7.0;
         const curTime = time.timeVirtualCurrent;
-        const curFrame = Math.floor( curTime * replayFrameRate );
+        const curFrame = Math.floor( curTime * replayFrameRate ) % frameCount;
         if (curFrame == this.timeLastUpdated) {
             return;
         }
         this.timeLastUpdated = curFrame;
 
         // Update array data:
-        const ar = this.displacementTexture.image.data;
+        const data_to = this.displaceData;
+        const data_from = this.jsonFrames.data;
         const height = this.surfaceShape[0];
         const width = this.surfaceShape[1];
         const size = width * height;
@@ -84,8 +109,11 @@ class TempleSpaceSandBuilder {
         const ch_sand = 1;
         for (var y=0; y<height; y++) {
             for (var x=0; x<width; x++) {
-                const i = ((x + (y * width)) * stride) + ch_sand;
-                this.displaceData[i] = Math.floor(128 + (Math.random() * 20));
+                const inner_i = (x + (y * width));
+                const to_i = (inner_i * stride) + ch_sand;
+                const from_i = inner_i + ( curFrame * width * height );
+                //data_to[to_i] = Math.floor(128 + (Math.random() * 20));
+                data_to[to_i] = data_from[from_i]
             }
         }
         this.displacementTexture.needsUpdate = true;
