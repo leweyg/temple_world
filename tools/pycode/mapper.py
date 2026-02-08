@@ -33,11 +33,13 @@ def upres_height(map9:numpy.ndarray) -> numpy.ndarray:
 def main_mapper():
     print("Starting")
     map9 = numpy.array( [
-        [60, 55, 50, 0,  0],
-        [70, 65, 60, 0,  0],
-        [80, 75, 70, 0,  0],
-        [90, 85, 90, 85, 80],
-        [100,95, 90, 85, 80]
+        [60, 60, 55, 50, 0,  0,  0],
+        [65, 65, 60, 57, 0,  0,  0],
+        [70, 70, 65, 60, 0,  0,  0],
+        [80, 80, 75, 70, 0,  0,  0],
+        [90, 90, 85, 80, 80, 80, 80],
+        [95, 95, 90, 80, 80, 70, 80],
+        [100,100,95, 80, 85, 85, 80]
     ], dtype=numpy.uint32 ) * 2.0
     print(map9)
     print(map9.shape)
@@ -47,6 +49,7 @@ def main_mapper():
     map_image = rgba_from_height(map_sm).astype(numpy.uint8)
     # out_path = "out.png"
     out_path = "content/images/grounds_height.png"
+    print(f"Saving {map_image.shape} to '{out_path}'")
     imageio.v2.imwrite(out_path, map_image)
 
     print("Done.")

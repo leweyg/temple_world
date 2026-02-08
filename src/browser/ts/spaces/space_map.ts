@@ -4,12 +4,13 @@ import * as THREE from 'three';
 class TempleSpaceMapBuilder {
     scene : THREE.Object3D;
     parentScene : THREE.Object3D;
-    surfaceShape = [ 128, 128 ];
+    surfaceShape = [ 49, 49 ];
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
-    flatScale = 10.0;
+    flatScale = 160.0;
     heightScale = 1.01;
+    startOffsetZ = -this.flatScale / 4.0;
 
     constructor(parentScene:THREE.Object3D) {
         this.parentScene = parentScene;
@@ -29,6 +30,7 @@ class TempleSpaceMapBuilder {
         geometry.setIndex( data.indices );
 
         this.mesh = new THREE.Mesh( geometry, this.mainMaterial );
+        this.mesh.position.set(0,0,this.startOffsetZ)
         this.scene.add( this.mesh );
     }
 

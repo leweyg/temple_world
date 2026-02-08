@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 var TempleSpaceMapBuilder = /** @class */ (function () {
     function TempleSpaceMapBuilder(parentScene) {
-        this.surfaceShape = [128, 128];
-        this.flatScale = 10.0;
+        this.surfaceShape = [49, 49];
+        this.flatScale = 160.0;
         this.heightScale = 1.01;
+        this.startOffsetZ = -this.flatScale / 4.0;
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceMap";
@@ -16,6 +17,7 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
         geometry.setAttribute('uv', new THREE.BufferAttribute(data.uv, 2));
         geometry.setIndex(data.indices);
         this.mesh = new THREE.Mesh(geometry, this.mainMaterial);
+        this.mesh.position.set(0, 0, this.startOffsetZ);
         this.scene.add(this.mesh);
     }
     TempleSpaceMapBuilder.prototype.indexFromXY = function (x, y) {
