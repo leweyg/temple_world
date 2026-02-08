@@ -19,7 +19,7 @@ def upres_height(map9:numpy.ndarray) -> numpy.ndarray:
     scale = 7
     map_sm = map9.repeat( scale, axis=0 ).repeat( scale, axis=1 )
 
-    noise_scale = 9
+    noise_scale = 20
     random_seed = 61
     rng = numpy.random.default_rng(random_seed)
     noise = rng.random(size=map_sm.shape)
@@ -45,6 +45,7 @@ def main_mapper():
     print(map9.shape)
 
     map_sm = upres_height(map9)
+    map_sm = upres_height(map_sm)
 
     map_image = rgba_from_height(map_sm).astype(numpy.uint8)
     # out_path = "out.png"

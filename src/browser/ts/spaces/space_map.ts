@@ -8,8 +8,16 @@ class TempleSpaceMapBuilder {
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
+    /*
+
     flatScale = 160.0;
-    heightScale = 1.01;
+    heightScale = 1.51;
+    heightOffset = 1.01;
+    startOffsetZ = -this.flatScale / 4.0;
+    */
+    flatScale = 16.0;
+    heightScale = 1.51;
+    heightOffset = 1.01;
     startOffsetZ = -this.flatScale / 4.0;
 
     constructor(parentScene:THREE.Object3D) {
@@ -85,7 +93,7 @@ class TempleSpaceMapBuilder {
 
         const vertexConsts = ""
         + "const float heightScale = " + this.heightScale + ";\n"
-        + "const float heightOffset = " + 1.01 + ";\n";
+        + "const float heightOffset = " + this.heightOffset + ";\n";
 
         const vertexShader = vertexConsts + `
     uniform sampler2D displacementTexture;
