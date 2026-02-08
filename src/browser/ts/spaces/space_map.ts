@@ -8,8 +8,8 @@ class TempleSpaceMapBuilder {
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
-    flatScale = 150.0;
-    heightScale = 8.01;
+    flatScale = 10.0;
+    heightScale = 1.01;
 
     constructor(parentScene:THREE.Object3D) {
         this.parentScene = parentScene;
@@ -49,7 +49,7 @@ class TempleSpaceMapBuilder {
 
     mapGridTexture() {
         const loader = new THREE.TextureLoader();
-        const image = loader.load('content/images/sfbay_height.png'); 
+        const image = loader.load('content/images/grounds_height.png'); 
         return image;
 
         // 1. Create a DataTexture

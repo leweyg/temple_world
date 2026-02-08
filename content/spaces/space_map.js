@@ -2,8 +2,8 @@ import * as THREE from 'three';
 var TempleSpaceMapBuilder = /** @class */ (function () {
     function TempleSpaceMapBuilder(parentScene) {
         this.surfaceShape = [128, 128];
-        this.flatScale = 150.0;
-        this.heightScale = 8.01;
+        this.flatScale = 10.0;
+        this.heightScale = 1.01;
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceMap";
@@ -34,7 +34,7 @@ var TempleSpaceMapBuilder = /** @class */ (function () {
     };
     TempleSpaceMapBuilder.prototype.mapGridTexture = function () {
         var loader = new THREE.TextureLoader();
-        var image = loader.load('content/images/sfbay_height.png');
+        var image = loader.load('content/images/grounds_height.png');
         return image;
         // 1. Create a DataTexture
         var height = this.surfaceShape[0];
