@@ -15,10 +15,10 @@ class TempleSpaceMapBuilder {
     heightOffset = 1.01;
     startOffsetZ = -this.flatScale / 4.0;
     */
-    flatScale = 32.0;
-    heightScale = 6.51;
-    heightOffset = -4.01;
-    startOffsetZ = -this.flatScale / 4.0;
+    flatScale = 225.0;
+    heightScale = 27.51;
+    heightOffset = -17.51;
+    startOffsetZ = -this.flatScale / 6.0;
 
     constructor(parentScene:THREE.Object3D) {
         this.parentScene = parentScene;
@@ -125,7 +125,7 @@ class TempleSpaceMapBuilder {
     const float gridPixelDeltaScale = 1.5;
     const vec3  gridTileRepeat = vec3( 1.0, 2.0, 1.0 );
     const float gridShadeXZ = 0.25;
-    const vec3  gridLightDir = normalize( vec3( 3, 1, 2 ) );
+    const vec3  gridLightDir = normalize( vec3( 1, 1.5, 5 ) );
     const float gridLightPower = 3.0;
     const vec4  gridColorGeneral = vec4(0.25, 0.25, 0.25, 1.0);
     const vec4  gridColorLine = vec4(1.0, 1.0, 1.0, 1.0);
