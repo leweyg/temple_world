@@ -4,7 +4,7 @@ import * as THREE from 'three';
 class TempleSpaceMapBuilder {
     scene : THREE.Object3D;
     parentScene : THREE.Object3D;
-    surfaceShape = [ 49, 49 ];
+    surfaceShape = [ 343, 343 ];
     texture : THREE.Texture;
     mesh : THREE.Mesh;
     mainMaterial : THREE.Material;
@@ -15,9 +15,9 @@ class TempleSpaceMapBuilder {
     heightOffset = 1.01;
     startOffsetZ = -this.flatScale / 4.0;
     */
-    flatScale = 16.0;
-    heightScale = 1.51;
-    heightOffset = 1.01;
+    flatScale = 32.0;
+    heightScale = 6.51;
+    heightOffset = -4.01;
     startOffsetZ = -this.flatScale / 4.0;
 
     constructor(parentScene:THREE.Object3D) {
@@ -106,7 +106,7 @@ class TempleSpaceMapBuilder {
         vec4 displacement = texture2D(displacementTexture, uv);
         
         // Use the red channel of the texture for displacement
-        float displacementFactor = ( displacement.r * heightScale ) - heightOffset;
+        float displacementFactor = ( displacement.r * heightScale ) + heightOffset;
 
         // Apply displacement along the normal, optionally animated with time
         vec3 displaceDir = vec3(0,1,0); // normal; 

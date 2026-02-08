@@ -19,7 +19,7 @@ def upres_height(map9:numpy.ndarray) -> numpy.ndarray:
     scale = 7
     map_sm = map9.repeat( scale, axis=0 ).repeat( scale, axis=1 )
 
-    noise_scale = 20
+    noise_scale = 5
     random_seed = 61
     rng = numpy.random.default_rng(random_seed)
     noise = rng.random(size=map_sm.shape)
@@ -36,9 +36,9 @@ def main_mapper():
         [60, 60, 55, 50, 0,  0,  0],
         [65, 65, 60, 57, 0,  0,  0],
         [70, 70, 65, 60, 0,  0,  0],
-        [80, 80, 75, 70, 0,  0,  0],
-        [90, 90, 85, 80, 80, 80, 80],
-        [95, 95, 90, 80, 80, 70, 80],
+        [75, 75, 70, 70, 0,  0,  0],
+        [95, 95, 90, 80, 80, 80, 80],
+        [95, 95, 95, 80, 80, 70, 80],
         [100,100,95, 80, 85, 85, 80]
     ], dtype=numpy.uint32 ) * 2.0
     print(map9)
