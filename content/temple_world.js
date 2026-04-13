@@ -48,6 +48,13 @@ var TempleWorld = /** @class */ (function () {
                 this.devMenuOverlay.style.display = 'none';
             }
         }
+        // Update focus tab content if devmenu is open and focus tab is selected
+        if (this.avatar.controls.isDevMode && window.currentDevMenuTab === 'focus') {
+            var focusDiv = document.getElementById('devmenu-tab-focus');
+            if (focusDiv) {
+                focusDiv.innerHTML = this.reflector.texter.generateFocusHTML();
+            }
+        }
     };
     return TempleWorld;
 }());

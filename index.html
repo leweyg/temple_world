@@ -116,6 +116,7 @@
 			}
 
             window.selectDevMenuTab = function(tab) {
+                window.currentDevMenuTab = tab;
                 var tabs = ['scene', 'focus', 'resources'];
                 for (var i = 0; i < tabs.length; i++) {
                     var name = tabs[i];
@@ -198,6 +199,8 @@
 					templeWorldInst.avatar.controls.isDevModeChanged = true;
 				}
 			};
+
+			window.currentDevMenuTab = 'scene';
 
 			init_three();
 
