@@ -56,11 +56,11 @@ class TempleReflectionText {
         html += '<label for="jumpto-select" style="display: block; margin-bottom: 5px; color: #aaa; font-size: 11px;">Jump to:</label>';
         html += '<select id="jumpto-select" style="width: 100%; padding: 5px; background: #333; color: #fff; border: 1px solid #666; font-family: monospace; font-size: 12px;">';
         html += '<option value="">-- Select --</option>';
-        html += '<option value="TempleAvatar">TempleAvatar</option>';
+        html += '<option value="TempleAvatar">Avatar</option>';
         html += '<option value="Camera">Camera</option>';
-        html += '<option value="TempleSpaceKalaChakra">TempleSpaceKalaChakra</option>';
-        html += '<option value="SpaceTrainingBoxes">SpaceTrainingBoxes</option>';
-        html += '<option value="ShuzzleInstance">ShuzzleInstance</option>';
+        html += '<option value="TempleSpaceKalaChakra">Central Temple (KalaChakra)</option>';
+        html += '<option value="SpaceTrainingBoxes">Training Boxes</option>';
+        html += '<option value="ShuzzleInstance">Shuzzle Puzzle</option>';
         html += '</select>';
         html += '</div>';
         return html;
