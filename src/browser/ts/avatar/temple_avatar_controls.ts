@@ -37,6 +37,7 @@ class TempleAvatarControls {
     _tvUp = new THREE.Vector3(0,1.0,0);
     _tvAcross = new THREE.Vector3(1.0,0,0);
     _tm1 = new THREE.Matrix4();
+    _te1 = new THREE.Euler();
     
     constructor(avatar:TempleAvatar, controlGroup:ControllerGroup) {
         this.isTempleAvatarControls = true;
@@ -339,16 +340,17 @@ class TempleAvatarControls {
         const prevFacing = this.avatar.pose.viewFacing;
         const nxtFacing = this._tvFacing;
         const lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
+        const rotateSpeed = 4.0;
         nxtFacing.copy(prevFacing);
 
         const avatarSide = this._tv1;
         avatarSide.copy(this._tvAcross);
         this.controlSpace.localToWorld(avatarSide);
-        const dy = control.unitCurrent.y * time.dt * lookSpeed * -ControlSettings.lookRateUpDown;
+        const dy = control.unitCurrent.y * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateUpDown;
         tq1.setFromAxisAngle(avatarSide, dy);
         nxtFacing.applyQuaternion(tq1);
 
-        const dx = control.unitCurrent.x * time.dt * lookSpeed * -ControlSettings.lookRateSide;
+        const dx = control.unitCurrent.x * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateSide;
         tq1.setFromAxisAngle(this._tvUp, dx);
         nxtFacing.applyQuaternion(tq1);
         
@@ -361,23 +363,51 @@ class TempleAvatarControls {
         const deltaQuat = this._tqFacing;
         deltaQuat.setFromUnitVectors(prevFacing, nxtFacing);
 
-        const deltaQuatFlat = this._tqFlatFacing;
-        const nextFacingFlat = this._tv2;
-        nextFacingFlat.copy(nxtFacing);
-        nextFacingFlat.setY(prevFacing.y);
-        deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
+        const deltaQuatAxis = this._tqFlatFacing;
+        this.projectRotationOntoDominantAxis(deltaQuat, deltaQuatAxis);
 
         if (held) {
             const heldField = held.userData?.field;
             if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
-                heldField.applyRotationDelta(deltaQuat);
+                heldField.applyRotationDelta(deltaQuatAxis);
             } else {
                 const heldQuat = this._tq1;
                 heldQuat.copy(held.quaternion);
-                heldQuat.multiply(deltaQuat);
+                heldQuat.multiply(deltaQuatAxis);
                 held.quaternion.copy(heldQuat);
             }
         }
+    }
+
+    projectRotationOntoDominantAxis(deltaQuat: THREE.Quaternion, outputQuat: THREE.Quaternion) {
+        const q = deltaQuat;
+        const qw = Math.max(-1.0, Math.min(1.0, q.w));
+        const angle = 2.0 * Math.acos(qw);
+        if (angle === 0.0) {
+            outputQuat.identity();
+            return;
+        }
+
+        const s = Math.sqrt(1.0 - qw * qw);
+        const axis = this._tv1;
+        if (s < 0.0001) {
+            axis.set(1.0, 0.0, 0.0);
+        } else {
+            axis.set(q.x / s, q.y / s, q.z / s);
+        }
+
+        const absX = Math.abs(axis.x);
+        const absY = Math.abs(axis.y);
+        const absZ = Math.abs(axis.z);
+        if (absY >= absX && absY >= absZ) {
+            axis.set(0.0, axis.y < 0.0 ? -1.0 : 1.0, 0.0);
+        } else if (absZ >= absX && absZ >= absY) {
+            axis.set(0.0, 0.0, axis.z < 0.0 ? -1.0 : 1.0);
+        } else {
+            axis.set(axis.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
+        }
+
+        outputQuat.setFromAxisAngle(axis, angle);
     }
 
 

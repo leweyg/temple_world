@@ -30,6 +30,7 @@ var TempleAvatarControls = /** @class */ (function () {
         this._tvUp = new THREE.Vector3(0, 1.0, 0);
         this._tvAcross = new THREE.Vector3(1.0, 0, 0);
         this._tm1 = new THREE.Matrix4();
+        this._te1 = new THREE.Euler();
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
         this.isDevMode = false;
@@ -308,14 +309,15 @@ var TempleAvatarControls = /** @class */ (function () {
         var prevFacing = this.avatar.pose.viewFacing;
         var nxtFacing = this._tvFacing;
         var lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
+        var rotateSpeed = 4.0;
         nxtFacing.copy(prevFacing);
         var avatarSide = this._tv1;
         avatarSide.copy(this._tvAcross);
         this.controlSpace.localToWorld(avatarSide);
-        var dy = control.unitCurrent.y * time.dt * lookSpeed * -ControlSettings.lookRateUpDown;
+        var dy = control.unitCurrent.y * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateUpDown;
         tq1.setFromAxisAngle(avatarSide, dy);
         nxtFacing.applyQuaternion(tq1);
-        var dx = control.unitCurrent.x * time.dt * lookSpeed * -ControlSettings.lookRateSide;
+        var dx = control.unitCurrent.x * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateSide;
         tq1.setFromAxisAngle(this._tvUp, dx);
         nxtFacing.applyQuaternion(tq1);
         var facingY = nxtFacing.y;
@@ -325,23 +327,50 @@ var TempleAvatarControls = /** @class */ (function () {
         nxtFacing.normalize();
         var deltaQuat = this._tqFacing;
         deltaQuat.setFromUnitVectors(prevFacing, nxtFacing);
-        var deltaQuatFlat = this._tqFlatFacing;
-        var nextFacingFlat = this._tv2;
-        nextFacingFlat.copy(nxtFacing);
-        nextFacingFlat.setY(prevFacing.y);
-        deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
+        var deltaQuatAxis = this._tqFlatFacing;
+        this.projectRotationOntoDominantAxis(deltaQuat, deltaQuatAxis);
         if (held) {
             var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
             if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
-                heldField.applyRotationDelta(deltaQuat);
+                heldField.applyRotationDelta(deltaQuatAxis);
             }
             else {
                 var heldQuat = this._tq1;
                 heldQuat.copy(held.quaternion);
-                heldQuat.multiply(deltaQuat);
+                heldQuat.multiply(deltaQuatAxis);
                 held.quaternion.copy(heldQuat);
             }
         }
+    };
+    TempleAvatarControls.prototype.projectRotationOntoDominantAxis = function (deltaQuat, outputQuat) {
+        var q = deltaQuat;
+        var qw = Math.max(-1.0, Math.min(1.0, q.w));
+        var angle = 2.0 * Math.acos(qw);
+        if (angle === 0.0) {
+            outputQuat.identity();
+            return;
+        }
+        var s = Math.sqrt(1.0 - qw * qw);
+        var axis = this._tv1;
+        if (s < 0.0001) {
+            axis.set(1.0, 0.0, 0.0);
+        }
+        else {
+            axis.set(q.x / s, q.y / s, q.z / s);
+        }
+        var absX = Math.abs(axis.x);
+        var absY = Math.abs(axis.y);
+        var absZ = Math.abs(axis.z);
+        if (absY >= absX && absY >= absZ) {
+            axis.set(0.0, axis.y < 0.0 ? -1.0 : 1.0, 0.0);
+        }
+        else if (absZ >= absX && absZ >= absY) {
+            axis.set(0.0, 0.0, axis.z < 0.0 ? -1.0 : 1.0);
+        }
+        else {
+            axis.set(axis.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
+        }
+        outputQuat.setFromAxisAngle(axis, angle);
     };
     TempleAvatarControls.prototype.onUseControl_PushObject = function (control, time, isRun) {
         var _a, _b;
