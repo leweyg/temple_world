@@ -115,6 +115,20 @@
 				}
 			}
 
+            window.selectDevMenuTab = function(tab) {
+                var tabs = ['scene', 'focus', 'resources'];
+                for (var i = 0; i < tabs.length; i++) {
+                    var name = tabs[i];
+                    var btn = document.getElementById('devmenu-tab-btn-' + name);
+                    var content = document.getElementById('devmenu-tab-' + name);
+                    if (!btn || !content) continue;
+                    var active = (name === tab);
+                    btn.style.background = active ? '#555' : 'transparent';
+                    btn.style.color = active ? '#fff' : '#aaa';
+                    content.style.display = active ? 'block' : 'none';
+                }
+            };
+
 			function expandAllParents(element) {
 				var parent = element.parentElement;
 				while (parent && parent.id !== 'devmenu-content') {
@@ -178,6 +192,13 @@
 			var isRedrawing = false;
 			var isRedrawRequested = false;
 
+			window.toggleDevMenu = () => {
+				if (templeWorldInst && templeWorldInst.avatar && templeWorldInst.avatar.controls) {
+					templeWorldInst.avatar.controls.isDevMode = !templeWorldInst.avatar.controls.isDevMode;
+					templeWorldInst.avatar.controls.isDevModeChanged = true;
+				}
+			};
+
 			init_three();
 
             function request_redraw() {
@@ -193,13 +214,6 @@
 				var webControl = new ControlFromWeb(renderer.domElement, templeWorldInst.controlGroup );
 
 			}
-
-			window.toggleDevMenu = () => {
-				if (templeWorldInst && templeWorldInst.avatar && templeWorldInst.avatar.controls) {
-					templeWorldInst.avatar.controls.isDevMode = !templeWorldInst.avatar.controls.isDevMode;
-					templeWorldInst.avatar.controls.isDevModeChanged = true;
-				}
-			};
 
 			function init_three() {
 

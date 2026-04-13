@@ -1,3 +1,5 @@
+import { ResourceInstance } from "../code/resource_tree.js";
+import { TempleFieldBase } from "../fields/temple_field.js";
 var RefInst = /** @class */ (function () {
     function RefInst() {
         this.name = "";
@@ -22,8 +24,24 @@ var TempleReflectionText = /** @class */ (function () {
         var whole = new RefInst();
         whole.name = "scenes/resources";
         whole.children = [scenes, reses];
-        var dropdown = this.generateJumpToDropdown();
-        return dropdown + this.htmlFromNameTree(whole);
+        var html = '';
+        html += '<div style="display: flex; gap: 4px; margin-bottom: 12px;">';
+        html += '<button id="devmenu-tab-btn-scene" onclick="window.selectDevMenuTab(\'scene\')" style="padding: 6px 10px; background: #555; color: #fff; border: 1px solid #666; cursor: pointer; font-family: monospace; font-size: 12px;">Scene</button>';
+        html += '<button id="devmenu-tab-btn-focus" onclick="window.selectDevMenuTab(\'focus\')" style="padding: 6px 10px; background: transparent; color: #aaa; border: 1px solid #666; cursor: pointer; font-family: monospace; font-size: 12px;">Focus</button>';
+        html += '<button id="devmenu-tab-btn-resources" onclick="window.selectDevMenuTab(\'resources\')" style="padding: 6px 10px; background: transparent; color: #aaa; border: 1px solid #666; cursor: pointer; font-family: monospace; font-size: 12px;">Resources</button>';
+        html += '</div>';
+        html += '<div id="devmenu-tab-scene" class="devmenu-tab-content">';
+        html += this.generateJumpToDropdown();
+        html += this.htmlFromNameTree(whole);
+        html += '</div>';
+        html += '<div id="devmenu-tab-focus" class="devmenu-tab-content" style="display:none;">';
+        html += this.generateFocusHTML();
+        html += '</div>';
+        html += '<div id="devmenu-tab-resources" class="devmenu-tab-content" style="display:none;">';
+        html += '<div style="margin-bottom: 10px; color: #ccc; font-size: 12px;">Resource tree only</div>';
+        html += this.htmlFromNameTree(reses);
+        html += '</div>';
+        return html;
     };
     TempleReflectionText.prototype.generateJumpToDropdown = function () {
         var html = '<div style="margin-bottom: 15px; border-bottom: 1px solid #666; padding-bottom: 10px;">';
@@ -113,6 +131,54 @@ var TempleReflectionText = /** @class */ (function () {
             ans.children.push(this.objPrintScene(child));
         }
         return ans;
+    };
+    TempleReflectionText.prototype.generateFocusHTML = function () {
+        var world = this.reflector.world;
+        var focusedField = world.avatar.view.latestCenterField();
+        var heldField = world.avatar.focus.held;
+        var targetContact = world.avatar.view.targetContact;
+        var html = '';
+        html += '<div style="margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #666;">';
+        html += '<div style="font-size: 13px; color: #fff; margin-bottom: 8px;">Avatar Focus</div>';
+        html += '<div style="font-size: 12px; color: #ccc; margin-bottom: 4px;">Centered field: ' + this.describeFocusField(focusedField) + '</div>';
+        html += '<div style="font-size: 12px; color: #ccc;">Held field: ' + this.describeFocusField(heldField) + '</div>';
+        html += '</div>';
+        html += '<div style="font-size: 13px; color: #fff; margin-bottom: 8px;">Collision hits</div>';
+        html += '<div style="font-size: 12px; color: #ccc; margin-bottom: 8px;">Hit now: ' + (targetContact.hit_now ? 'yes' : 'no') + '</div>';
+        if (targetContact.hit_now) {
+            html += '<div style="font-size: 12px; color: #ccc; margin-bottom: 8px;">Hit position: ' + targetContact.hit_pos.x.toFixed(2) + ', ' + targetContact.hit_pos.y.toFixed(2) + ', ' + targetContact.hit_pos.z.toFixed(2) + '</div>';
+        }
+        if (targetContact.intersects.length === 0) {
+            html += '<div style="color: #999; font-size: 12px;">No currently intersected objects.</div>';
+        }
+        else {
+            for (var i = 0; i < targetContact.intersects.length; i++) {
+                var hit = targetContact.intersects[i];
+                var field = TempleFieldBase.tryFieldFromObject3D(hit.object);
+                var inst = ResourceInstance.tryFromObject3D(hit.object);
+                html += '<div style="margin-bottom: 8px; padding: 6px; border: 1px solid #444;">';
+                html += '<div style="font-size: 12px; color: #fff;">' + (hit.object.name || hit.object.type || 'Object') + '</div>';
+                html += '<div style="font-size: 11px; color: #999;">type: ' + (hit.object.type || 'Unknown') + '</div>';
+                if (field) {
+                    html += '<div style="font-size: 11px; color: #999;">field: ' + this.describeFocusField(field) + '</div>';
+                }
+                if (inst) {
+                    html += '<div style="font-size: 11px; color: #999;">resource: ' + inst.res_data.res.fullPathStr() + '</div>';
+                }
+                html += '<div style="font-size: 11px; color: #999;">distance: ' + hit.distance.toFixed(3) + '</div>';
+                html += '</div>';
+            }
+        }
+        return html;
+    };
+    TempleReflectionText.prototype.describeFocusField = function (field) {
+        if (!field) {
+            return '<span style="color:#777;">none</span>';
+        }
+        if (typeof field.fullPathStr === 'function') {
+            return field.fullPathStr();
+        }
+        return field.constructor ? field.constructor.name : 'field';
     };
     return TempleReflectionText;
 }());

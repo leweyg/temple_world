@@ -1,4 +1,4 @@
-import { TempleFieldBase } from "../fields/temple_field";
+import { TempleFieldBase } from "../fields/temple_field.js";
 import { TempleAvatar } from "./temple_avatar";
 import * as THREE from 'three';
 
