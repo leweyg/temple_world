@@ -16,6 +16,11 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
     matCentered: THREE.Material;
     matHeld: THREE.Material;
     meshInstance: ResourceInstance | null = null;
+    isGridSnappable: boolean = true;
+    gridSnapSize: number = 1.0;
+    gridSnapThreshold: number = 0.35;
+    rotationSnapAngle: number = Math.PI / 2;
+    rotationSnapThreshold: number = Math.PI / 16;
 
     constructor(
         meshData: any,
@@ -44,6 +49,64 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
         const resData = new ResourceData(shuzzleBlockType, { mesh: this.mesh }, this);
         this.meshInstance = ResourceInstance.fromObject3D(this.mesh, resData);
         this.mesh.userData.field = this;
+        this.state_instance_latest = this.meshInstance;
+        this.state_instancer = Promise.resolve(this.meshInstance);
+        this.state_loaded_latest = resData;
+    }
+
+    applyPositionDelta(delta: THREE.Vector3, isPush: boolean = false) {
+        this.mesh.position.add(delta);
+        this.applyPositionMagnetism();
+    }
+
+    applyPositionMagnetism() {
+        const snapped = this.snapPositionToGrid(this.mesh.position);
+        const diff = snapped.clone().sub(this.mesh.position);
+        if (diff.length() <= this.gridSnapThreshold) {
+            this.mesh.position.copy(snapped);
+        }
+    }
+
+    applyRotationDelta(deltaQuat: THREE.Quaternion) {
+        const nextQuat = this.mesh.quaternion.clone();
+        nextQuat.multiply(deltaQuat);
+        this.mesh.quaternion.copy(nextQuat);
+        this.applyRotationMagnetism();
+    }
+
+    applyRotationMagnetism() {
+        const currentY = this.getYRotation();
+        const nearestY = Math.round(currentY / this.rotationSnapAngle) * this.rotationSnapAngle;
+        const diff = Math.abs(nearestY - currentY);
+        if (diff <= this.rotationSnapThreshold) {
+            this.setYRotation(nearestY);
+        }
+    }
+
+    snapToGrid() {
+        const snappedPos = this.snapPositionToGrid(this.mesh.position);
+        this.mesh.position.copy(snappedPos);
+        const nearestY = Math.round(this.getYRotation() / this.rotationSnapAngle) * this.rotationSnapAngle;
+        this.setYRotation(nearestY);
+    }
+
+    private snapPositionToGrid(position: THREE.Vector3) {
+        return new THREE.Vector3(
+            Math.round(position.x / this.gridSnapSize) * this.gridSnapSize,
+            Math.round(position.y / this.gridSnapSize) * this.gridSnapSize,
+            Math.round(position.z / this.gridSnapSize) * this.gridSnapSize
+        );
+    }
+
+    private getYRotation(): number {
+        const euler = new THREE.Euler();
+        euler.setFromQuaternion(this.mesh.quaternion, 'YXZ');
+        return euler.y;
+    }
+
+    private setYRotation(angle: number) {
+        const euler = new THREE.Euler(0, angle, 0, 'YXZ');
+        this.mesh.quaternion.setFromEuler(euler);
     }
 
     private createMeshFromData(data: any): THREE.Mesh {

@@ -18,10 +18,11 @@ class TempleAvatarFocus {
             return null;
         }
         const res = this.held.latestInstance();
-        if (res) {
-            return res.asObject3D();
+        if (!res) {
+            console.assert(false, "Held field has no instance: " + this.held.fullPathStr());
+            return null;
         }
-        return null;
+        return res.asObject3D();
     }
 
     ensureCentered(newCentered:TempleFieldBase|null) {

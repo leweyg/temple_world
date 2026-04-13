@@ -297,6 +297,12 @@ class TempleAvatarControls {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
 
+                const heldScene = this.avatar.focus.heldScene();
+                const heldField = heldScene ? heldScene.userData?.field : null;
+                if (control.isEnd && heldField && heldField.isGridSnappable && typeof heldField.snapToGrid === 'function') {
+                    heldField.snapToGrid();
+                }
+
                 const oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
                     if (oldHeld) {
@@ -352,15 +358,16 @@ class TempleAvatarControls {
         nextFacingFlat.setY(prevFacing.y);
         deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
 
-        //const held = this.avatar.focus.heldScene();
         if (held) {
-            // console.log("Rotating held object...");
-            // rotate held object:
-            const heldOffset = this._tq1;
-            heldOffset.copy(held.quaternion);
-            heldOffset.multiply(deltaQuat);
-            heldOffset.multiply(deltaQuat);
-            held.quaternion.copy(heldOffset);
+            const heldField = held.userData?.field;
+            if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
+                heldField.applyRotationDelta(deltaQuat);
+            } else {
+                const heldQuat = this._tq1;
+                heldQuat.copy(held.quaternion);
+                heldQuat.multiply(deltaQuat);
+                held.quaternion.copy(heldQuat);
+            }
         }
     }
 
@@ -372,6 +379,12 @@ class TempleAvatarControls {
             if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+
+                const heldScene = this.avatar.focus.heldScene();
+                const heldField = heldScene ? heldScene.userData?.field : null;
+                if (control.isEnd && heldField && heldField.isGridSnappable && typeof heldField.snapToGrid === 'function') {
+                    heldField.snapToGrid();
+                }
 
                 const oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
@@ -404,7 +417,20 @@ class TempleAvatarControls {
         tv2.copy(tv1);
         const baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk
         tv1.multiplyScalar(baseSpeed * time.dt);
-        held.position.add(tv1);
+
+        const localDelta = tv1.clone();
+        if (held.parent) {
+            const invParentRotation = new THREE.Matrix4();
+            invParentRotation.extractRotation(held.parent.matrixWorld).invert();
+            localDelta.applyMatrix4(invParentRotation);
+        }
+
+        const heldField = held.userData?.field;
+        if (heldField && heldField.isGridSnappable && typeof heldField.applyPositionDelta === 'function') {
+            heldField.applyPositionDelta(localDelta, isRun);
+        } else {
+            held.position.add(localDelta);
+        }
 
         // TODO: keep avatar looking at the object (probably gradually):
     }
