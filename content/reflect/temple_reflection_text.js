@@ -1,7 +1,9 @@
 var RefInst = /** @class */ (function () {
     function RefInst() {
         this.name = "";
+        this.type = "";
         this.children = [];
+        this.obj = null; // the THREE.Object3D or ResourceTree
     }
     return RefInst;
 }());
@@ -11,53 +13,57 @@ var TempleReflectionText = /** @class */ (function () {
         this.reflector = reflector;
         this.isTempleReflectionText = true;
     }
-    TempleReflectionText.prototype.drawTextReflection = function () {
+    TempleReflectionText.prototype.drawHTMLReflection = function () {
         var world = this.reflector.world;
         var reses = this.objPrintResourceRecursive(world.resourceRoot);
         var scenes = this.objPrintScene(world.parentScene);
-        var whole = {
-            name: "resources/scenes",
-            children: [
-                reses,
-                scenes,
-            ]
-        };
-        return this.textFromNameTree(whole);
+        var whole = new RefInst();
+        whole.name = "resources/scenes";
+        whole.children = [reses, scenes];
+        return this.htmlFromNameTree(whole);
     };
-    TempleReflectionText.prototype.textFromNameTree = function (obj, tabs, skipPrefix) {
-        if (tabs === void 0) { tabs = 0; }
-        if (skipPrefix === void 0) { skipPrefix = false; }
-        var line = "";
-        for (var ti = 0; ti < tabs && !skipPrefix; ti++) {
-            line += "  ";
+    TempleReflectionText.prototype.htmlFromNameTree = function (obj, depth) {
+        if (depth === void 0) { depth = 0; }
+        var html = '<div class="tree-item" style="margin-left: ' + (depth * 20) + 'px;">';
+        var hasChildren = obj.children && obj.children.length > 0;
+        var toggleSymbol = hasChildren ? '▶' : '';
+        html += '<span class="tree-toggle" onclick="toggleTreeItem(this)">' + toggleSymbol + ' ' + (obj.name || '(unnamed)') + (obj.type ? ' &lt;' + obj.type + '&gt;' : '') + '</span>';
+        if (obj.obj) {
+            html += '<div class="properties" style="margin-left: 20px; font-size: 10px; color: #ccc;">';
+            html += this.getPropertiesHTML(obj.obj);
+            html += '</div>';
         }
-        if (obj.name) {
-            line += obj.name;
-        }
-        else {
-            line += "(unnamed)";
-        }
-        if (obj.type) {
-            line += " <" + obj.type + ">";
-        }
-        if (obj.children && obj.children.length) {
-            if (obj.children.length == 1) {
-                line += " / ";
-                line += this.textFromNameTree(obj.children[0], tabs + 1, true);
+        if (hasChildren) {
+            html += '<div class="tree-children" style="display: none;">';
+            for (var _i = 0, _a = obj.children; _i < _a.length; _i++) {
+                var child = _a[_i];
+                html += this.htmlFromNameTree(child, depth + 1);
             }
-            else {
-                for (var i = 0; i < obj.children.length; i++) {
-                    var child = obj.children[i];
-                    line += "\n" + this.textFromNameTree(child, tabs + 1);
-                }
-            }
+            html += '</div>';
         }
-        return line;
+        html += '</div>';
+        return html;
+    };
+    TempleReflectionText.prototype.getPropertiesHTML = function (obj) {
+        var html = '';
+        if (obj.name !== undefined)
+            html += 'name: ' + obj.name + '<br>';
+        if (obj.position)
+            html += 'position: ' + obj.position.x.toFixed(2) + ', ' + obj.position.y.toFixed(2) + ', ' + obj.position.z.toFixed(2) + '<br>';
+        if (obj.rotation)
+            html += 'rotation: ' + obj.rotation.x.toFixed(2) + ', ' + obj.rotation.y.toFixed(2) + ', ' + obj.rotation.z.toFixed(2) + '<br>';
+        if (obj.scale)
+            html += 'scale: ' + obj.scale.x.toFixed(2) + ', ' + obj.scale.y.toFixed(2) + ', ' + obj.scale.z.toFixed(2) + '<br>';
+        if (obj.visible !== undefined)
+            html += 'visible: ' + obj.visible + '<br>';
+        return html;
     };
     TempleReflectionText.prototype.objPrintResourceRecursive = function (resTree) {
         var ans = new RefInst();
-        ans.name = resTree.resource_path + " <" + resTree.resource_type.name + ">",
-            ans.children = [];
+        ans.name = resTree.resource_path;
+        ans.type = resTree.resource_type.name;
+        ans.obj = resTree;
+        ans.children = [];
         for (var ci in resTree.tree_children) {
             var child = resTree.tree_children[ci];
             var ca = this.objPrintResourceRecursive(child);
@@ -66,7 +72,16 @@ var TempleReflectionText = /** @class */ (function () {
         return ans;
     };
     TempleReflectionText.prototype.objPrintScene = function (node) {
-        return node;
+        var ans = new RefInst();
+        ans.name = node.name || 'Scene';
+        ans.type = node.type;
+        ans.obj = node;
+        ans.children = [];
+        for (var _i = 0, _a = node.children; _i < _a.length; _i++) {
+            var child = _a[_i];
+            ans.children.push(this.objPrintScene(child));
+        }
+        return ans;
     };
     return TempleReflectionText;
 }());
