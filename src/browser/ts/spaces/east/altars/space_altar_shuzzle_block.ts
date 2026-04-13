@@ -56,31 +56,12 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
 
     applyPositionDelta(delta: THREE.Vector3, isPush: boolean = false) {
         this.mesh.position.add(delta);
-        this.applyPositionMagnetism();
-    }
-
-    applyPositionMagnetism() {
-        const snapped = this.snapPositionToGrid(this.mesh.position);
-        const diff = snapped.clone().sub(this.mesh.position);
-        if (diff.length() <= this.gridSnapThreshold) {
-            this.mesh.position.copy(snapped);
-        }
     }
 
     applyRotationDelta(deltaQuat: THREE.Quaternion) {
         const nextQuat = this.mesh.quaternion.clone();
         nextQuat.multiply(deltaQuat);
         this.mesh.quaternion.copy(nextQuat);
-        this.applyRotationMagnetism();
-    }
-
-    applyRotationMagnetism() {
-        const currentY = this.getYRotation();
-        const nearestY = Math.round(currentY / this.rotationSnapAngle) * this.rotationSnapAngle;
-        const diff = Math.abs(nearestY - currentY);
-        if (diff <= this.rotationSnapThreshold) {
-            this.setYRotation(nearestY);
-        }
     }
 
     snapToGrid() {

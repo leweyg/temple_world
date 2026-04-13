@@ -60,28 +60,11 @@ var SpaceAltarShuzzleBlock = /** @class */ (function (_super) {
     SpaceAltarShuzzleBlock.prototype.applyPositionDelta = function (delta, isPush) {
         if (isPush === void 0) { isPush = false; }
         this.mesh.position.add(delta);
-        this.applyPositionMagnetism();
-    };
-    SpaceAltarShuzzleBlock.prototype.applyPositionMagnetism = function () {
-        var snapped = this.snapPositionToGrid(this.mesh.position);
-        var diff = snapped.clone().sub(this.mesh.position);
-        if (diff.length() <= this.gridSnapThreshold) {
-            this.mesh.position.copy(snapped);
-        }
     };
     SpaceAltarShuzzleBlock.prototype.applyRotationDelta = function (deltaQuat) {
         var nextQuat = this.mesh.quaternion.clone();
         nextQuat.multiply(deltaQuat);
         this.mesh.quaternion.copy(nextQuat);
-        this.applyRotationMagnetism();
-    };
-    SpaceAltarShuzzleBlock.prototype.applyRotationMagnetism = function () {
-        var currentY = this.getYRotation();
-        var nearestY = Math.round(currentY / this.rotationSnapAngle) * this.rotationSnapAngle;
-        var diff = Math.abs(nearestY - currentY);
-        if (diff <= this.rotationSnapThreshold) {
-            this.setYRotation(nearestY);
-        }
     };
     SpaceAltarShuzzleBlock.prototype.snapToGrid = function () {
         var snappedPos = this.snapPositionToGrid(this.mesh.position);
