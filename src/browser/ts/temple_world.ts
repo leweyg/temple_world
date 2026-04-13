@@ -19,6 +19,8 @@ class TempleWorld {
     parentScene : THREE.Object3D;
     requestRedrawCallback : ()=>void;
     devElement : HTMLElement;
+    devMenuOverlay : HTMLElement;
+    devMenuTextarea : HTMLTextAreaElement;
     reflector : TempleReflection;
     resourceRoot : ResourceTree;
     worldScene : THREE.Object3D;
@@ -27,11 +29,15 @@ class TempleWorld {
         parentScene:THREE.Object3D, 
         cameraThree:THREE.Camera, 
         requestRedrawCallback:()=>void,
-        devElement:HTMLElement
+        devElement:HTMLElement,
+        devMenuOverlay:HTMLElement,
+        devMenuTextarea:HTMLTextAreaElement
     ) {
         this.parentScene = parentScene;
         this.requestRedrawCallback = requestRedrawCallback;
         this.devElement = devElement;
+        this.devMenuOverlay = devMenuOverlay;
+        this.devMenuTextarea = devMenuTextarea;
         this.time = new TempleTime(requestRedrawCallback);
         this.reflector = new TempleReflection(this);
         
@@ -56,9 +62,10 @@ class TempleWorld {
         if (this.avatar.controls.isDevModeChanged) {
             this.avatar.controls.isDevModeChanged = false;
             if (this.avatar.controls.isDevMode) {
-                this.devElement.textContent = this.reflector.texter.drawTextReflection();
+                this.devMenuTextarea.value = this.reflector.texter.drawTextReflection();
+                this.devMenuOverlay.style.display = 'block';
             } else {
-                this.devElement.textContent = "~";
+                this.devMenuOverlay.style.display = 'none';
             }
         }
     }

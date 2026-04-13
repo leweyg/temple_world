@@ -5,11 +5,13 @@ import { ControllerGroup } from './controls/temple_controls.js';
 import { ResourceTree } from './code/resource_tree.js';
 import { TempleReflection } from './reflect/temple_reflection.js';
 var TempleWorld = /** @class */ (function () {
-    function TempleWorld(parentScene, cameraThree, requestRedrawCallback, devElement) {
+    function TempleWorld(parentScene, cameraThree, requestRedrawCallback, devElement, devMenuOverlay, devMenuTextarea) {
         var _this = this;
         this.parentScene = parentScene;
         this.requestRedrawCallback = requestRedrawCallback;
         this.devElement = devElement;
+        this.devMenuOverlay = devMenuOverlay;
+        this.devMenuTextarea = devMenuTextarea;
         this.time = new TempleTime(requestRedrawCallback);
         this.reflector = new TempleReflection(this);
         ResourceTree.RequestUpdate = (function () { return _this.time.requestUpdate(); });
@@ -28,10 +30,11 @@ var TempleWorld = /** @class */ (function () {
         if (this.avatar.controls.isDevModeChanged) {
             this.avatar.controls.isDevModeChanged = false;
             if (this.avatar.controls.isDevMode) {
-                this.devElement.textContent = this.reflector.texter.drawTextReflection();
+                this.devMenuTextarea.value = this.reflector.texter.drawTextReflection();
+                this.devMenuOverlay.style.display = 'block';
             }
             else {
-                this.devElement.textContent = "~";
+                this.devMenuOverlay.style.display = 'none';
             }
         }
     };
