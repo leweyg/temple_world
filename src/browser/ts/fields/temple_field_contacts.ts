@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TempleWorld } from '../temple_world.js';
 import { ResourceInstance } from '../code/resource_tree.js';
+import { TempleFieldBase } from './temple_field.js';
 
 class TempleFieldContacts {
     constructor(public world : TempleWorld) {
@@ -54,24 +55,29 @@ class TempleFieldContactsRay extends TempleFieldContacts {
         const intersects = this.raycaster.intersectObjects( this.possibles, true, this.intersects );
         console.assert(intersects == this.intersects);
         if (intersects.length > 0) {
-            var best = intersects[0];
-            var bestInst : ResourceInstance|null = null;
-            for (var hitIndex=0; hitIndex<intersects.length; hitIndex++) {
-                const cur = intersects[hitIndex];
-                const resInst = ResourceInstance.tryFromObject3D(cur.object);
-                if (resInst) {
-                    bestInst = resInst;
+            let best: THREE.Intersection<THREE.Object3D> | null = null;
+            let bestDistance = Infinity;
+            const fieldBiasDistance = 2.0;
+
+            for (const cur of intersects) {
+                const distance = cur.distance;
+                const field = TempleFieldBase.tryFieldFromObject3D(cur.object);
+                const biasedDist = distance - (field ? fieldBiasDistance : 0.0);
+                if (biasedDist < bestDistance) {
                     best = cur;
-                    break;
+                    bestDistance = biasedDist;
                 }
             }
-            this.hit_now = true;
-            this.hit_pos.copy(best.point);
-            return intersects[0];
 
-        } else {
-            this.hit_now = false;
+            let chosen: THREE.Intersection<THREE.Object3D> | null = best;
+
+            if (chosen) {
+                this.hit_now = true;
+                this.hit_pos.copy(chosen.point);
+                return chosen;
+            }
         }
+        this.hit_now = false;
         return null;
     }
 };

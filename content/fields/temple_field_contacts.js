@@ -14,7 +14,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 import * as THREE from 'three';
-import { ResourceInstance } from '../code/resource_tree.js';
+import { TempleFieldBase } from './temple_field.js';
 var TempleFieldContacts = /** @class */ (function () {
     function TempleFieldContacts(world) {
         this.world = world;
@@ -64,24 +64,27 @@ var TempleFieldContactsRay = /** @class */ (function (_super) {
         var intersects = this.raycaster.intersectObjects(this.possibles, true, this.intersects);
         console.assert(intersects == this.intersects);
         if (intersects.length > 0) {
-            var best = intersects[0];
-            var bestInst = null;
-            for (var hitIndex = 0; hitIndex < intersects.length; hitIndex++) {
-                var cur = intersects[hitIndex];
-                var resInst = ResourceInstance.tryFromObject3D(cur.object);
-                if (resInst) {
-                    bestInst = resInst;
+            var best = null;
+            var bestDistance = Infinity;
+            var fieldBiasDistance = 2.0;
+            for (var _i = 0, intersects_1 = intersects; _i < intersects_1.length; _i++) {
+                var cur = intersects_1[_i];
+                var distance = cur.distance;
+                var field = TempleFieldBase.tryFieldFromObject3D(cur.object);
+                var biasedDist = distance - (field ? fieldBiasDistance : 0.0);
+                if (biasedDist < bestDistance) {
                     best = cur;
-                    break;
+                    bestDistance = biasedDist;
                 }
             }
-            this.hit_now = true;
-            this.hit_pos.copy(best.point);
-            return intersects[0];
+            var chosen = best;
+            if (chosen) {
+                this.hit_now = true;
+                this.hit_pos.copy(chosen.point);
+                return chosen;
+            }
         }
-        else {
-            this.hit_now = false;
-        }
+        this.hit_now = false;
         return null;
     };
     return TempleFieldContactsRay;
