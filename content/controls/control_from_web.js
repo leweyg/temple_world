@@ -151,6 +151,7 @@ var ControlFromWeb = /** @class */ (function () {
         var cur = this.ensureStreamById(id);
         cur.isDown = true;
         this.updateStreamFromPointer(cur, event, true);
+        event.target.setPointerCapture(event.pointerId);
         this.controlGroup.onControllerEvent(cur);
     };
     ControlFromWeb.prototype.onPointerMove = function (event) {

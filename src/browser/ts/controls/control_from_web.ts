@@ -182,6 +182,7 @@ class ControlFromWeb {
         var cur = this.ensureStreamById(id);
         cur.isDown = true;
         this.updateStreamFromPointer(cur, event, true);
+        (event.target as HTMLElement).setPointerCapture(event.pointerId);
         this.controlGroup.onControllerEvent(cur);
     }
 
