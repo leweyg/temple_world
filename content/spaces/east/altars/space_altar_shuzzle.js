@@ -15,9 +15,11 @@ var __extends = (this && this.__extends) || (function () {
 })();
 import * as THREE from 'three';
 import { ResourceTypeJson, ResourceInstance } from '../../../code/resource_tree.js';
+import { SpaceAltarShuzzleBlock } from './space_altar_shuzzle_block.js';
 var SpaceAltarShuzzleInstance = /** @class */ (function () {
     function SpaceAltarShuzzleInstance(res, parent, parentRes) {
         this.lines = null;
+        this.blocks = [];
         this.isSpaceAltarShuzzleInstance = true;
         var name = Object.keys(res)[0];
         var resData = res[name];
@@ -30,11 +32,11 @@ var SpaceAltarShuzzleInstance = /** @class */ (function () {
         var resBlocks = resData.Board.Blocks;
         for (var ri in resBlocks) {
             var rb = resBlocks[ri];
-            var s = this.sceneFromMesh(rb.Mesh);
+            var block = new SpaceAltarShuzzleBlock(rb.Mesh, "block_" + ri, this.scene, parentRes);
             if (rb.Center) {
-                s.position.copy(rb.Center);
+                block.setPosition(new THREE.Vector3(rb.Center.x, rb.Center.y, rb.Center.z));
             }
-            this.scene.add(s);
+            this.blocks.push(block);
         }
     }
     SpaceAltarShuzzleInstance.prototype.sceneFromMesh = function (data) {

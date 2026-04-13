@@ -84,6 +84,9 @@ var TempleReflectionText = /** @class */ (function () {
             html += 'scale: ' + obj.scale.x.toFixed(2) + ', ' + obj.scale.y.toFixed(2) + ', ' + obj.scale.z.toFixed(2) + '<br>';
         if (obj.visible !== undefined)
             html += 'visible: ' + obj.visible + '<br>';
+        if (obj.userData && Object.keys(obj.userData).length > 0) {
+            html += 'userData: ' + Object.keys(obj.userData).join(', ') + '<br>';
+        }
         return html;
     };
     TempleReflectionText.prototype.objPrintResourceRecursive = function (resTree) {

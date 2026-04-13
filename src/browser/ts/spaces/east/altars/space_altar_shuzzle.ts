@@ -1,10 +1,12 @@
 
 import * as THREE from 'three';
 import { ResourceTree, ResourceTypeJson, ResourceData, ResourceInstance } from '../../../code/resource_tree.js';
+import { SpaceAltarShuzzleBlock } from './space_altar_shuzzle_block.js';
 
 class SpaceAltarShuzzleInstance {
     scene : THREE.Object3D;
     lines : THREE.Line|null = null;
+    blocks : SpaceAltarShuzzleBlock[] = [];
     isSpaceAltarShuzzleInstance : boolean = true;
 
     constructor(res:any, parent:THREE.Object3D, parentRes:ResourceTree) {
@@ -22,11 +24,16 @@ class SpaceAltarShuzzleInstance {
         const resBlocks = resData.Board.Blocks;
         for (var ri in resBlocks) {
             var rb = resBlocks[ri];
-            var s = this.sceneFromMesh(rb.Mesh);
+            const block = new SpaceAltarShuzzleBlock(
+                rb.Mesh,
+                "block_" + ri,
+                this.scene,
+                parentRes
+            );
             if (rb.Center) {
-                s.position.copy(rb.Center);
+                block.setPosition(new THREE.Vector3(rb.Center.x, rb.Center.y, rb.Center.z));
             }
-            this.scene.add( s );
+            this.blocks.push(block);
         }
     }
 

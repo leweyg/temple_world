@@ -50,8 +50,15 @@ var TempleFieldBase = /** @class */ (function (_super) {
             console.assert(inst.is_res_inst);
             console.assert(inst.res_data.is_res_data);
             console.assert(inst.res_data.res.is_resource_tree);
+            return this.tryFieldFromRes(inst.res_data.res);
         }
-        return this.tryFieldFromRes(inst ? inst.res_data.res : null);
+        if (obj.userData && obj.userData.field) {
+            var fieldCandidate = obj.userData.field;
+            if (fieldCandidate && TempleFieldBase.isResTreeField(fieldCandidate)) {
+                return fieldCandidate;
+            }
+        }
+        return null;
     };
     return TempleFieldBase;
 }(ResourceTree));

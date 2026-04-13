@@ -86,6 +86,9 @@ class TempleReflectionText {
         if (obj.rotation) html += 'rotation: ' + obj.rotation.x.toFixed(2) + ', ' + obj.rotation.y.toFixed(2) + ', ' + obj.rotation.z.toFixed(2) + '<br>';
         if (obj.scale) html += 'scale: ' + obj.scale.x.toFixed(2) + ', ' + obj.scale.y.toFixed(2) + ', ' + obj.scale.z.toFixed(2) + '<br>';
         if (obj.visible !== undefined) html += 'visible: ' + obj.visible + '<br>';
+        if (obj.userData && Object.keys(obj.userData).length > 0) {
+            html += 'userData: ' + Object.keys(obj.userData).join(', ') + '<br>';
+        }
         return html;
     }
 
