@@ -32,6 +32,17 @@ var TempleWorld = /** @class */ (function () {
             if (this.avatar.controls.isDevMode) {
                 this.devMenuContent.innerHTML = this.reflector.texter.drawHTMLReflection();
                 this.devMenuOverlay.style.display = 'block';
+                // Setup jump-to dropdown handler
+                var selectElem = this.devMenuContent.querySelector('#jumpto-select');
+                if (selectElem) {
+                    selectElem.onchange = function (e) {
+                        var value = e.target.value;
+                        if (value) {
+                            window.jumpToItem(value);
+                            e.target.value = '';
+                        }
+                    };
+                }
             }
             else {
                 this.devMenuOverlay.style.display = 'none';

@@ -12,6 +12,7 @@ class RefInst {
 class TempleReflectionText {
     reflector : TempleReflection;
     isTempleReflectionText = true;
+    treeItemCounter : number = 0;
 
     constructor(reflector : TempleReflection) {
         this.reflector = reflector;
@@ -19,34 +20,59 @@ class TempleReflectionText {
     }
 
     drawHTMLReflection() {
+        this.treeItemCounter = 0;
         var world = this.reflector.world;
         var reses = this.objPrintResourceRecursive(world.resourceRoot);
         var scenes = this.objPrintScene(world.parentScene);
         var whole = new RefInst();
-        whole.name = "resources/scenes";
-        whole.children = [reses, scenes];
-        return this.htmlFromNameTree(whole);
+        whole.name = "scenes/resources";
+        whole.children = [scenes, reses];
+        var dropdown = this.generateJumpToDropdown();
+        return dropdown + this.htmlFromNameTree(whole);
+    }
+
+    generateJumpToDropdown():string {
+        var html = '<div style="margin-bottom: 15px; border-bottom: 1px solid #666; padding-bottom: 10px;">';
+        html += '<label for="jumpto-select" style="display: block; margin-bottom: 5px; color: #aaa; font-size: 11px;">Jump to:</label>';
+        html += '<select id="jumpto-select" style="width: 100%; padding: 5px; background: #333; color: #fff; border: 1px solid #666; font-family: monospace; font-size: 12px;">';
+        html += '<option value="">-- Select --</option>';
+        html += '<option value="TempleAvatar">TempleAvatar</option>';
+        html += '<option value="Camera">Camera</option>';
+        html += '<option value="TempleSpaceKalaChakra">TempleSpaceKalaChakra</option>';
+        html += '<option value="SpaceTrainingBoxes">SpaceTrainingBoxes</option>';
+        html += '<option value="ShuzzleInstance">ShuzzleInstance</option>';
+        html += '</select>';
+        html += '</div>';
+        return html;
     }
 
     htmlFromNameTree(obj:RefInst, depth=0):string {
-        var html = '<div class="tree-item">';
+        var itemId = 'tree-item-' + this.treeItemCounter;
+        this.treeItemCounter++;
+        var html = '<div class="tree-item" id="' + itemId + '" data-name="' + (obj.name || '') + '" data-type="' + (obj.type || '') + '">';
         var hasChildren = obj.children && obj.children.length > 0;
-        var toggleSymbol = hasChildren ? '▶' : '';
+        var hasProperties = obj.obj !== null;
+        var hasExpandable = hasChildren || hasProperties;
+        var toggleSymbol = hasExpandable ? '▶' : '';
         var indent = '';
         for (var i = 0; i < depth; i++) {
             indent += '- ';
         }
         html += '<span class="tree-toggle" onclick="toggleTreeItem(this)">' + indent + toggleSymbol + ' ' + (obj.name || '(unnamed)') + (obj.type ? ' &lt;' + obj.type + '&gt;' : '') + '</span>';
-        if (obj.obj) {
-            html += '<div class="properties" style="padding-left: 20px; font-size: 10px; color: #ccc;">';
-            html += this.getPropertiesHTML(obj.obj);
-            html += '</div>';
-        }
-        if (hasChildren) {
+        
+        if (hasExpandable) {
             html += '<div class="tree-children" style="display: none;">';
-            for (var child of obj.children) {
-                html += this.htmlFromNameTree(child, depth + 1);
+            if (hasProperties) {
+                html += '<div class="properties" style="padding-left: 20px; font-size: 10px; color: #ccc;">';
+                html += this.getPropertiesHTML(obj.obj);
+                html += '</div>';
             }
+            if (hasChildren) {
+                for (var child of obj.children) {
+                    html += this.htmlFromNameTree(child, depth + 1);
+                }
+            }
+            html += '<hr style="border: none; border-top: 1px solid #666; margin: 5px 0;">';
             html += '</div>';
         }
         html += '</div>';

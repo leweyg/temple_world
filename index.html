@@ -38,6 +38,7 @@
 			<a href="about.html" style="color:green">Temple World <u>(read)</u></a>
 			<span id="main-local-host-menu" style="display: none;">
 				<u onclick="mainDoRecompile()" style="color:green" id="main_recompile_link">(recompile)</u>
+				<u onclick="toggleDevMenu()" style="color:green">(devmenu)</u>
 			</span>
 		</div>
 		<div id="main_canvas_holder">
@@ -103,7 +104,8 @@
 
 			function toggleTreeItem(span) {
 				var parent = span.parentElement;
-				var children = parent.querySelector('.tree-children');
+				var children = parent.querySelector(':scope > .tree-children');
+				if (!children) return;
 				if (children.style.display === 'none') {
 					children.style.display = 'block';
 					span.textContent = span.textContent.replace('▶', '▼');
@@ -111,6 +113,42 @@
 					children.style.display = 'none';
 					span.textContent = span.textContent.replace('▼', '▶');
 				}
+			}
+
+			function expandAllParents(element) {
+				var parent = element.parentElement;
+				while (parent && parent.id !== 'devmenu-content') {
+					if (parent.classList.contains('tree-item')) {
+						var children = parent.querySelector(':scope > .tree-children');
+						var toggle = parent.querySelector(':scope > .tree-toggle');
+						if (children && children.style.display === 'none') {
+							children.style.display = 'block';
+							if (toggle) {
+								toggle.textContent = toggle.textContent.replace('▶', '▼');
+							}
+						}
+						parent = parent.parentElement;
+					} else {
+						parent = parent.parentElement;
+					}
+				}
+			}
+
+			function jumpToItem(name) {
+				var items = document.querySelectorAll('[data-name]');
+				var found = false;
+				for (var item of items) {
+					var itemName = item.getAttribute('data-name');
+					if (itemName === name) {
+						expandAllParents(item);
+						item.style.backgroundColor = '#444';
+						item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+						found = true;
+						setTimeout(() => { item.style.backgroundColor = ''; }, 2000);
+						break;
+					}
+				}
+				if (!found) console.log('Item not found: ' + name);
 			}
 		</script>
 
@@ -155,6 +193,13 @@
 				var webControl = new ControlFromWeb(renderer.domElement, templeWorldInst.controlGroup );
 
 			}
+
+			window.toggleDevMenu = () => {
+				if (templeWorldInst && templeWorldInst.avatar && templeWorldInst.avatar.controls) {
+					templeWorldInst.avatar.controls.isDevMode = !templeWorldInst.avatar.controls.isDevMode;
+					templeWorldInst.avatar.controls.isDevModeChanged = true;
+				}
+			};
 
 			function init_three() {
 

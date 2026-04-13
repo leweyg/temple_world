@@ -64,6 +64,17 @@ class TempleWorld {
             if (this.avatar.controls.isDevMode) {
                 this.devMenuContent.innerHTML = this.reflector.texter.drawHTMLReflection();
                 this.devMenuOverlay.style.display = 'block';
+                // Setup jump-to dropdown handler
+                var selectElem = this.devMenuContent.querySelector('#jumpto-select') as HTMLSelectElement;
+                if (selectElem) {
+                    selectElem.onchange = (e:any) => {
+                        var value = e.target.value;
+                        if (value) {
+                            (window as any).jumpToItem(value);
+                            e.target.value = '';
+                        }
+                    };
+                }
             } else {
                 this.devMenuOverlay.style.display = 'none';
             }
