@@ -23,11 +23,13 @@ var TempleAvatarControls = /** @class */ (function () {
         this._tq1 = new THREE.Quaternion();
         this._tv1 = new THREE.Vector3();
         this._tv2 = new THREE.Vector3();
+        this._tv3 = new THREE.Vector3();
         this._tvFacing = new THREE.Vector3();
         this._tqFacing = new THREE.Quaternion();
         this._tqFlatFacing = new THREE.Quaternion();
         this._tvUp = new THREE.Vector3(0, 1.0, 0);
         this._tvAcross = new THREE.Vector3(1.0, 0, 0);
+        this._tm1 = new THREE.Matrix4();
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
         this.isDevMode = false;
@@ -167,6 +169,8 @@ var TempleAvatarControls = /** @class */ (function () {
             return;
         var tv1 = this._tv1;
         var tv2 = this._tv2;
+        var tv3 = this._tv3;
+        var tm1 = this._tm1;
         tv1.copy(control.unitCurrent);
         var motion = tv1.length();
         tv1.set(tv1.x, 0, tv1.y);
@@ -180,7 +184,12 @@ var TempleAvatarControls = /** @class */ (function () {
             this.avatar.pose.bodyPos.add(tv1);
             var heldScene = this.avatar.focus.heldScene();
             if (heldScene) {
-                heldScene.position.add(tv1);
+                tv3.copy(tv1);
+                if (heldScene.parent) {
+                    tm1.extractRotation(heldScene.parent.matrixWorld).invert();
+                    tv3.applyMatrix4(tm1);
+                }
+                heldScene.position.add(tv3);
             }
             tv2.setY(0);
             tv2.normalize();
@@ -365,6 +374,8 @@ var TempleAvatarControls = /** @class */ (function () {
         }
         var tv1 = this._tv1;
         var tv2 = this._tv2;
+        var tv3 = this._tv3;
+        var tm1 = this._tm1;
         tv1.copy(control.unitCurrent);
         var motion = tv1.length();
         tv1.set(tv1.x, 0, tv1.y);
@@ -373,18 +384,17 @@ var TempleAvatarControls = /** @class */ (function () {
         tv2.copy(tv1);
         var baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk;
         tv1.multiplyScalar(baseSpeed * time.dt);
-        var localDelta = tv1.clone();
+        tv3.copy(tv1);
         if (held.parent) {
-            var invParentRotation = new THREE.Matrix4();
-            invParentRotation.extractRotation(held.parent.matrixWorld).invert();
-            localDelta.applyMatrix4(invParentRotation);
+            tm1.extractRotation(held.parent.matrixWorld).invert();
+            tv3.applyMatrix4(tm1);
         }
         var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
         if (heldField && heldField.isGridSnappable && typeof heldField.applyPositionDelta === 'function') {
-            heldField.applyPositionDelta(localDelta, isRun);
+            heldField.applyPositionDelta(tv3, isRun);
         }
         else {
-            held.position.add(localDelta);
+            held.position.add(tv3);
         }
         // TODO: keep avatar looking at the object (probably gradually):
     };
