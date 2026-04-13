@@ -32,6 +32,11 @@ var SpaceAltarShuzzleBlock = /** @class */ (function (_super) {
     function SpaceAltarShuzzleBlock(meshData, blockName, sceneParent, resourceParent) {
         var _this = _super.call(this, "shuzzleblock_" + blockName, resourceParent, shuzzleBlockType) || this;
         _this.meshInstance = null;
+        _this.isGridSnappable = true;
+        _this.gridSnapSize = 1.0;
+        _this.gridSnapThreshold = 0.35;
+        _this.rotationSnapAngle = Math.PI / 2;
+        _this.rotationSnapThreshold = Math.PI / 16;
         _this.is_focusable = true;
         _this.resourceParent.resourceAddChild(_this);
         // Create materials for different focus states
@@ -47,8 +52,55 @@ var SpaceAltarShuzzleBlock = /** @class */ (function (_super) {
         var resData = new ResourceData(shuzzleBlockType, { mesh: _this.mesh }, _this);
         _this.meshInstance = ResourceInstance.fromObject3D(_this.mesh, resData);
         _this.mesh.userData.field = _this;
+        _this.state_instance_latest = _this.meshInstance;
+        _this.state_instancer = Promise.resolve(_this.meshInstance);
+        _this.state_loaded_latest = resData;
         return _this;
     }
+    SpaceAltarShuzzleBlock.prototype.applyPositionDelta = function (delta, isPush) {
+        if (isPush === void 0) { isPush = false; }
+        this.mesh.position.add(delta);
+        this.applyPositionMagnetism();
+    };
+    SpaceAltarShuzzleBlock.prototype.applyPositionMagnetism = function () {
+        var snapped = this.snapPositionToGrid(this.mesh.position);
+        var diff = snapped.clone().sub(this.mesh.position);
+        if (diff.length() <= this.gridSnapThreshold) {
+            this.mesh.position.copy(snapped);
+        }
+    };
+    SpaceAltarShuzzleBlock.prototype.applyRotationDelta = function (deltaQuat) {
+        var nextQuat = this.mesh.quaternion.clone();
+        nextQuat.multiply(deltaQuat);
+        this.mesh.quaternion.copy(nextQuat);
+        this.applyRotationMagnetism();
+    };
+    SpaceAltarShuzzleBlock.prototype.applyRotationMagnetism = function () {
+        var currentY = this.getYRotation();
+        var nearestY = Math.round(currentY / this.rotationSnapAngle) * this.rotationSnapAngle;
+        var diff = Math.abs(nearestY - currentY);
+        if (diff <= this.rotationSnapThreshold) {
+            this.setYRotation(nearestY);
+        }
+    };
+    SpaceAltarShuzzleBlock.prototype.snapToGrid = function () {
+        var snappedPos = this.snapPositionToGrid(this.mesh.position);
+        this.mesh.position.copy(snappedPos);
+        var nearestY = Math.round(this.getYRotation() / this.rotationSnapAngle) * this.rotationSnapAngle;
+        this.setYRotation(nearestY);
+    };
+    SpaceAltarShuzzleBlock.prototype.snapPositionToGrid = function (position) {
+        return new THREE.Vector3(Math.round(position.x / this.gridSnapSize) * this.gridSnapSize, Math.round(position.y / this.gridSnapSize) * this.gridSnapSize, Math.round(position.z / this.gridSnapSize) * this.gridSnapSize);
+    };
+    SpaceAltarShuzzleBlock.prototype.getYRotation = function () {
+        var euler = new THREE.Euler();
+        euler.setFromQuaternion(this.mesh.quaternion, 'YXZ');
+        return euler.y;
+    };
+    SpaceAltarShuzzleBlock.prototype.setYRotation = function (angle) {
+        var euler = new THREE.Euler(0, angle, 0, 'YXZ');
+        this.mesh.quaternion.setFromEuler(euler);
+    };
     SpaceAltarShuzzleBlock.prototype.createMeshFromData = function (data) {
         if (data.VerticesPerPolygon !== 4) {
             throw "SpaceAltarShuzzleBlock expects VerticesPerPolygon=4, got ".concat(data.VerticesPerPolygon);

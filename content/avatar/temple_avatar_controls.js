@@ -266,11 +266,17 @@ var TempleAvatarControls = /** @class */ (function () {
         }
     };
     TempleAvatarControls.prototype.onUseControl_RotatingObject = function (control, time, isAim) {
+        var _a, _b;
         if (time == null) {
             // start/stop stuff:
             if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+                var heldScene = this.avatar.focus.heldScene();
+                var heldField = heldScene ? (_a = heldScene.userData) === null || _a === void 0 ? void 0 : _a.field : null;
+                if (control.isEnd && heldField && heldField.isGridSnappable && typeof heldField.snapToGrid === 'function') {
+                    heldField.snapToGrid();
+                }
                 var oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
                     if (oldHeld) {
@@ -315,23 +321,31 @@ var TempleAvatarControls = /** @class */ (function () {
         nextFacingFlat.copy(nxtFacing);
         nextFacingFlat.setY(prevFacing.y);
         deltaQuatFlat.setFromUnitVectors(prevFacing, nxtFacing);
-        //const held = this.avatar.focus.heldScene();
         if (held) {
-            // console.log("Rotating held object...");
-            // rotate held object:
-            var heldOffset = this._tq1;
-            heldOffset.copy(held.quaternion);
-            heldOffset.multiply(deltaQuat);
-            heldOffset.multiply(deltaQuat);
-            held.quaternion.copy(heldOffset);
+            var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
+            if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
+                heldField.applyRotationDelta(deltaQuat);
+            }
+            else {
+                var heldQuat = this._tq1;
+                heldQuat.copy(held.quaternion);
+                heldQuat.multiply(deltaQuat);
+                held.quaternion.copy(heldQuat);
+            }
         }
     };
     TempleAvatarControls.prototype.onUseControl_PushObject = function (control, time, isRun) {
+        var _a, _b;
         if (time == null) {
             // start/stop stuff:
             if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
+                var heldScene = this.avatar.focus.heldScene();
+                var heldField_1 = heldScene ? (_a = heldScene.userData) === null || _a === void 0 ? void 0 : _a.field : null;
+                if (control.isEnd && heldField_1 && heldField_1.isGridSnappable && typeof heldField_1.snapToGrid === 'function') {
+                    heldField_1.snapToGrid();
+                }
                 var oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
                     if (oldHeld) {
@@ -359,7 +373,19 @@ var TempleAvatarControls = /** @class */ (function () {
         tv2.copy(tv1);
         var baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk;
         tv1.multiplyScalar(baseSpeed * time.dt);
-        held.position.add(tv1);
+        var localDelta = tv1.clone();
+        if (held.parent) {
+            var invParentRotation = new THREE.Matrix4();
+            invParentRotation.extractRotation(held.parent.matrixWorld).invert();
+            localDelta.applyMatrix4(invParentRotation);
+        }
+        var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
+        if (heldField && heldField.isGridSnappable && typeof heldField.applyPositionDelta === 'function') {
+            heldField.applyPositionDelta(localDelta, isRun);
+        }
+        else {
+            held.position.add(localDelta);
+        }
         // TODO: keep avatar looking at the object (probably gradually):
     };
     return TempleAvatarControls;

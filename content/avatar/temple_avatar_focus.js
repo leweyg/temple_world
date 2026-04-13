@@ -10,10 +10,11 @@ var TempleAvatarFocus = /** @class */ (function () {
             return null;
         }
         var res = this.held.latestInstance();
-        if (res) {
-            return res.asObject3D();
+        if (!res) {
+            console.assert(false, "Held field has no instance: " + this.held.fullPathStr());
+            return null;
         }
-        return null;
+        return res.asObject3D();
     };
     TempleAvatarFocus.prototype.ensureCentered = function (newCentered) {
         this.ensureFocus(this.held, newCentered);
