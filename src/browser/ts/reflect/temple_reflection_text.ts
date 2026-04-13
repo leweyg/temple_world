@@ -29,12 +29,16 @@ class TempleReflectionText {
     }
 
     htmlFromNameTree(obj:RefInst, depth=0):string {
-        var html = '<div class="tree-item" style="margin-left: ' + (depth * 20) + 'px;">';
+        var html = '<div class="tree-item">';
         var hasChildren = obj.children && obj.children.length > 0;
         var toggleSymbol = hasChildren ? '▶' : '';
-        html += '<span class="tree-toggle" onclick="toggleTreeItem(this)">' + toggleSymbol + ' ' + (obj.name || '(unnamed)') + (obj.type ? ' &lt;' + obj.type + '&gt;' : '') + '</span>';
+        var indent = '';
+        for (var i = 0; i < depth; i++) {
+            indent += '- ';
+        }
+        html += '<span class="tree-toggle" onclick="toggleTreeItem(this)">' + indent + toggleSymbol + ' ' + (obj.name || '(unnamed)') + (obj.type ? ' &lt;' + obj.type + '&gt;' : '') + '</span>';
         if (obj.obj) {
-            html += '<div class="properties" style="margin-left: 20px; font-size: 10px; color: #ccc;">';
+            html += '<div class="properties" style="padding-left: 20px; font-size: 10px; color: #ccc;">';
             html += this.getPropertiesHTML(obj.obj);
             html += '</div>';
         }
