@@ -24,9 +24,16 @@ var TempleAvatarControls = /** @class */ (function () {
         this._tv1 = new THREE.Vector3();
         this._tv2 = new THREE.Vector3();
         this._tv3 = new THREE.Vector3();
+        this._tv4 = new THREE.Vector3();
         this._tvFacing = new THREE.Vector3();
+        this._tvControlForward = new THREE.Vector3();
+        this._tvControlRight = new THREE.Vector3();
         this._tqFacing = new THREE.Quaternion();
         this._tqFlatFacing = new THREE.Quaternion();
+        this._tq2 = new THREE.Quaternion();
+        this._tq3 = new THREE.Quaternion();
+        this._tq4 = new THREE.Quaternion();
+        this._tq5 = new THREE.Quaternion();
         this._tvUp = new THREE.Vector3(0, 1.0, 0);
         this._tvAcross = new THREE.Vector3(1.0, 0, 0);
         this._tm1 = new THREE.Matrix4();
@@ -37,12 +44,20 @@ var TempleAvatarControls = /** @class */ (function () {
         this._discreteRotationSnapAngle = Math.PI / 2; // 90 degrees
         this._accumulatedRotationMotion = 0; // Accumulates motion to trigger next rotation
         this._rotationMotionPerSnap = 0.5; // Distance needed to trigger another snap
-        // Smooth rotation animation
+        // Smooth held object animation
+        this._rotationAnimatedObject = null;
         this._targetRotationForHeldObject = new THREE.Quaternion();
         this._rotationAnimStartTime = 0;
         this._rotationAnimDuration = 0.15; // Duration of smooth rotation snap in seconds
         this._isRotationAnimating = false;
         this._rotationAnimStartQuat = new THREE.Quaternion();
+        this._positionAnimatedObject = null;
+        this._targetPositionForHeldObject = new THREE.Vector3();
+        this._positionAnimStartTime = 0;
+        this._positionAnimDuration = 0.15;
+        this._isPositionAnimating = false;
+        this._positionAnimStartPos = new THREE.Vector3();
+        this._activeVisualSnapFields = [];
         // Discrete push state (for push object)
         this._lastPushDirection = "none";
         this._discretePushThreshold = 0.3;
@@ -74,7 +89,7 @@ var TempleAvatarControls = /** @class */ (function () {
         if (!this._isRotationAnimating) {
             return;
         }
-        var held = this.avatar.focus.heldScene();
+        var held = this._rotationAnimatedObject;
         if (!held) {
             this._isRotationAnimating = false;
             return;
@@ -84,20 +99,181 @@ var TempleAvatarControls = /** @class */ (function () {
             // Animation complete
             held.quaternion.copy(this._targetRotationForHeldObject);
             this._isRotationAnimating = false;
+            this._rotationAnimatedObject = null;
         }
         else {
             // Interpolate between start and target
             var t = elapsedTime / this._rotationAnimDuration;
             var smoothT = t * t * (3.0 - 2.0 * t); // Smoothstep interpolation
-            var result = new THREE.Quaternion();
+            var result = this._tq1;
             result.copy(this._rotationAnimStartQuat);
             result.slerp(this._targetRotationForHeldObject, smoothT);
             held.quaternion.copy(result);
         }
     };
+    TempleAvatarControls.prototype.updateHeldObjectPositionAnimation = function (time) {
+        if (!this._isPositionAnimating) {
+            return;
+        }
+        var held = this._positionAnimatedObject;
+        if (!held) {
+            this._isPositionAnimating = false;
+            return;
+        }
+        var elapsedTime = time.timeVirtualCurrent - this._positionAnimStartTime;
+        if (elapsedTime >= this._positionAnimDuration) {
+            held.position.copy(this._targetPositionForHeldObject);
+            this._isPositionAnimating = false;
+            this._positionAnimatedObject = null;
+        }
+        else {
+            var t = elapsedTime / this._positionAnimDuration;
+            var smoothT = t * t * (3.0 - 2.0 * t);
+            held.position.lerpVectors(this._positionAnimStartPos, this._targetPositionForHeldObject, smoothT);
+        }
+    };
+    TempleAvatarControls.prototype.updateVisualSnapAnimations = function (time) {
+        if (this._activeVisualSnapFields.length === 0) {
+            return;
+        }
+        var stillAnimating = [];
+        for (var i in this._activeVisualSnapFields) {
+            var field = this._activeVisualSnapFields[i];
+            if (field && typeof field.updateVisualSnapAnimation === 'function') {
+                if (field.updateVisualSnapAnimation(time)) {
+                    stillAnimating.push(field);
+                }
+            }
+        }
+        this._activeVisualSnapFields = stillAnimating;
+    };
+    TempleAvatarControls.prototype.startHeldObjectRotationAnimation = function (held, targetQuat, startTime) {
+        this._rotationAnimatedObject = held;
+        this._rotationAnimStartQuat.copy(held.quaternion);
+        this._targetRotationForHeldObject.copy(targetQuat);
+        this._rotationAnimStartTime = startTime;
+        this._isRotationAnimating = true;
+    };
+    TempleAvatarControls.prototype.startHeldObjectPositionAnimation = function (held, targetPos, startTime) {
+        this._positionAnimatedObject = held;
+        this._positionAnimStartPos.copy(held.position);
+        this._targetPositionForHeldObject.copy(targetPos);
+        this._positionAnimStartTime = startTime;
+        this._isPositionAnimating = true;
+    };
+    TempleAvatarControls.prototype.ensureVisualSnapFieldTracked = function (field) {
+        if (this._activeVisualSnapFields.indexOf(field) >= 0) {
+            return;
+        }
+        this._activeVisualSnapFields.push(field);
+    };
+    TempleAvatarControls.prototype.getFlatViewForwardWorld = function (output) {
+        output.copy(this.avatar.pose.viewFacing);
+        output.setY(0.0);
+        if (output.lengthSq() < 0.0001) {
+            output.copy(this.avatar.pose.bodyFacing);
+            output.setY(0.0);
+        }
+        if (output.lengthSq() < 0.0001) {
+            output.set(0.0, 0.0, -1.0);
+        }
+        else {
+            output.normalize();
+        }
+    };
+    TempleAvatarControls.prototype.getFlatViewRightWorld = function (output) {
+        var forward = this._tvControlForward;
+        this.getFlatViewForwardWorld(forward);
+        output.copy(forward);
+        output.cross(this._tvUp);
+        if (output.lengthSq() < 0.0001) {
+            output.set(1.0, 0.0, 0.0);
+        }
+        else {
+            output.normalize();
+        }
+    };
+    TempleAvatarControls.prototype.getControlInputWorldFlat = function (control, output) {
+        var forward = this._tvControlForward;
+        var right = this._tvControlRight;
+        this.getFlatViewForwardWorld(forward);
+        this.getFlatViewRightWorld(right);
+        output.copy(right);
+        output.multiplyScalar(control.unitCurrent.x);
+        output.addScaledVector(forward, control.unitCurrent.y);
+    };
+    TempleAvatarControls.prototype.snapWorldVectorToCardinalXZ = function (source, output) {
+        var absX = Math.abs(source.x);
+        var absZ = Math.abs(source.z);
+        if ((absX < 0.0001) && (absZ < 0.0001)) {
+            output.set(0.0, 0.0, 0.0);
+            return "none";
+        }
+        if (absX > absZ) {
+            output.set(source.x >= 0.0 ? 1.0 : -1.0, 0.0, 0.0);
+            return source.x >= 0.0 ? "right" : "left";
+        }
+        output.set(0.0, 0.0, source.z >= 0.0 ? 1.0 : -1.0);
+        return source.z >= 0.0 ? "up" : "down";
+    };
+    TempleAvatarControls.prototype.getHeldBaseLocalQuaternion = function (held, output) {
+        if (this._isRotationAnimating && (this._rotationAnimatedObject === held)) {
+            output.copy(this._targetRotationForHeldObject);
+        }
+        else {
+            output.copy(held.quaternion);
+        }
+    };
+    TempleAvatarControls.prototype.getHeldBaseLocalPosition = function (held, output) {
+        if (this._isPositionAnimating && (this._positionAnimatedObject === held)) {
+            output.copy(this._targetPositionForHeldObject);
+        }
+        else {
+            output.copy(held.position);
+        }
+    };
+    TempleAvatarControls.prototype.convertWorldDeltaToHeldParentLocal = function (held, worldDelta, output) {
+        output.copy(worldDelta);
+        if (held.parent) {
+            held.parent.updateWorldMatrix(true, false);
+            held.parent.getWorldQuaternion(this._tq2);
+            this._tq2.invert();
+            output.applyQuaternion(this._tq2);
+        }
+    };
+    TempleAvatarControls.prototype.computeHeldTargetLocalRotationFromWorldDelta = function (held, worldDeltaQuat, output) {
+        var currentLocalQuat = this._tq2;
+        var parentWorldQuat = this._tq3;
+        var targetWorldQuat = this._tq4;
+        this.getHeldBaseLocalQuaternion(held, currentLocalQuat);
+        if (held.parent) {
+            held.parent.updateWorldMatrix(true, false);
+            held.parent.getWorldQuaternion(parentWorldQuat);
+        }
+        else {
+            parentWorldQuat.identity();
+        }
+        targetWorldQuat.copy(parentWorldQuat);
+        targetWorldQuat.multiply(currentLocalQuat);
+        targetWorldQuat.premultiply(worldDeltaQuat);
+        output.copy(parentWorldQuat);
+        output.invert();
+        output.multiply(targetWorldQuat);
+    };
+    TempleAvatarControls.prototype.computeHeldLocalRotationDeltaFromWorldDelta = function (held, worldDeltaQuat, output) {
+        var currentLocalQuat = this._tq5;
+        var targetLocalQuat = this._tq3;
+        this.getHeldBaseLocalQuaternion(held, currentLocalQuat);
+        this.computeHeldTargetLocalRotationFromWorldDelta(held, worldDeltaQuat, targetLocalQuat);
+        output.copy(currentLocalQuat);
+        output.invert();
+        output.multiply(targetLocalQuat);
+    };
     TempleAvatarControls.prototype.onTimeStepped = function (time) {
-        // Apply smooth rotation animation to held object
+        // Apply smooth visual animation to held objects
         this.updateHeldObjectRotationAnimation(time);
+        this.updateHeldObjectPositionAnimation(time);
+        this.updateVisualSnapAnimations(time);
         // before controllers:
         this.avatar.pose.viewFovScale = 1.0;
         // controllers:
@@ -111,7 +287,7 @@ var TempleAvatarControls = /** @class */ (function () {
             }
         }
         // after controllers
-        if (anyDown) {
+        if (anyDown || this._isRotationAnimating || this._isPositionAnimating || (this._activeVisualSnapFields.length > 0)) {
             this.avatar.world.time.requestUpdate();
         }
         // overlay after controllers:
@@ -386,9 +562,9 @@ var TempleAvatarControls = /** @class */ (function () {
                     }
                 }
                 else {
-                    // Rotate around X axis (side to side in world space)
-                    rotationAxis.copy(this._tvAcross);
-                    this.controlSpace.localToWorld(rotationAxis);
+                    // Rotate around the camera-relative horizontal axis, snapped onto world X/Z.
+                    this.getFlatViewRightWorld(rotationAxis);
+                    this.snapWorldVectorToCardinalXZ(rotationAxis, rotationAxis);
                     if (currentDirection === "down") {
                         rotationAngle = -rotationAngle;
                     }
@@ -398,25 +574,16 @@ var TempleAvatarControls = /** @class */ (function () {
                 if (held) {
                     var heldField = (_a = held.userData) === null || _a === void 0 ? void 0 : _a.field;
                     if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
-                        heldField.applyRotationDelta(tq1);
+                        var localDeltaQuat = this._tqFacing;
+                        this.computeHeldLocalRotationDeltaFromWorldDelta(held, tq1, localDeltaQuat);
+                        heldField.applyRotationDelta(localDeltaQuat, time.timeVirtualCurrent);
+                        this.ensureVisualSnapFieldTracked(heldField);
                     }
                     else {
-                        // Compute new target rotation: start with current held quaternion and apply snap
-                        var tempQuat = new THREE.Quaternion();
-                        tempQuat.copy(held.quaternion);
-                        tempQuat.multiply(tq1);
-                        // Start animation if not already animating
-                        if (!this._isRotationAnimating) {
-                            this._rotationAnimStartQuat.copy(held.quaternion);
-                            this._rotationAnimStartTime = this.avatar.world.time.timeVirtualCurrent;
-                            this._isRotationAnimating = true;
-                        }
-                        else {
-                            // If already animating, restart from current position for smooth continuation
-                            this._rotationAnimStartQuat.copy(held.quaternion);
-                            this._rotationAnimStartTime = this.avatar.world.time.timeVirtualCurrent;
-                        }
-                        this._targetRotationForHeldObject.copy(tempQuat);
+                        // Convert the camera-relative world rotation into the held object's local space.
+                        var targetLocalQuat = this._tqFacing;
+                        this.computeHeldTargetLocalRotationFromWorldDelta(held, tq1, targetLocalQuat);
+                        this.startHeldObjectRotationAnimation(held, targetLocalQuat, time.timeVirtualCurrent);
                     }
                 }
             }
@@ -479,21 +646,18 @@ var TempleAvatarControls = /** @class */ (function () {
             console.log("No held scene for pushing.");
             return;
         }
-        // Discrete push motion based on stick direction
-        var stickX = control.unitCurrent.x;
-        var stickY = control.unitCurrent.y;
-        var stickMagnitude = Math.sqrt(stickX * stickX + stickY * stickY);
+        // Discrete push motion based on the camera-relative control direction rotated into world space.
+        var controlWorld = this._tv1;
+        var snappedWorldDirection = this._tv2;
+        this.getControlInputWorldFlat(control, controlWorld);
+        var stickMagnitude = controlWorld.length();
         // Determine current cardinal direction
         var currentDirection = "none";
         if (stickMagnitude > this._discretePushThreshold) {
-            var absX = Math.abs(stickX);
-            var absY = Math.abs(stickY);
-            if (absX > absY) {
-                currentDirection = stickX > 0 ? "right" : "left";
-            }
-            else {
-                currentDirection = stickY > 0 ? "up" : "down";
-            }
+            currentDirection = this.snapWorldVectorToCardinalXZ(controlWorld, snappedWorldDirection);
+        }
+        else {
+            snappedWorldDirection.set(0.0, 0.0, 0.0);
         }
         // Reset accumulation on direction change
         if (currentDirection !== this._lastPushDirection) {
@@ -508,39 +672,21 @@ var TempleAvatarControls = /** @class */ (function () {
                 this._accumulatedPushMotion -= this._pushMotionPerSnap;
                 var tv1 = this._tv1;
                 var tv3 = this._tv3;
-                var tm1 = this._tm1;
-                // Calculate push direction based on current direction
-                tv1.set(0, 0, 0);
-                if (currentDirection === "right") {
-                    tv1.x = 1;
-                }
-                else if (currentDirection === "left") {
-                    tv1.x = -1;
-                }
-                else if (currentDirection === "up") {
-                    tv1.y = 0;
-                    tv1.z = 1;
-                }
-                else if (currentDirection === "down") {
-                    tv1.y = 0;
-                    tv1.z = -1;
-                }
-                var localToControl = this.controlSpace;
-                localToControl.localToWorld(tv1);
-                tv1.normalize();
+                // Step along the snapped world axis that is nearest to the camera-relative input.
+                tv1.copy(snappedWorldDirection);
                 // Move 1m per snap (fixed discrete increment)
                 tv1.multiplyScalar(1.0);
-                tv3.copy(tv1);
-                if (held.parent) {
-                    tm1.extractRotation(held.parent.matrixWorld).invert();
-                    tv3.applyMatrix4(tm1);
-                }
+                this.convertWorldDeltaToHeldParentLocal(held, tv1, tv3);
                 var heldField = (_a = held.userData) === null || _a === void 0 ? void 0 : _a.field;
                 if (heldField && heldField.isGridSnappable && typeof heldField.applyPositionDelta === 'function') {
-                    heldField.applyPositionDelta(tv3, isRun);
+                    heldField.applyPositionDelta(tv3, isRun, time.timeVirtualCurrent);
+                    this.ensureVisualSnapFieldTracked(heldField);
                 }
                 else {
-                    held.position.add(tv3);
+                    var nextPos = this._tv4;
+                    this.getHeldBaseLocalPosition(held, nextPos);
+                    nextPos.add(tv3);
+                    this.startHeldObjectPositionAnimation(held, nextPos, time.timeVirtualCurrent);
                 }
             }
         }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TempleFieldBase } from '../../../fields/temple_field.js';
 import { ResourceTree, ResourceData, ResourceInstance, ResourceType } from '../../../code/resource_tree.js';
+import { TempleTime } from '../../../temple_time.js';
 
 class SpaceAltarShuzzleBlockType extends ResourceType {
     override isSyncAlloc(): boolean {
@@ -11,6 +12,7 @@ class SpaceAltarShuzzleBlockType extends ResourceType {
 const shuzzleBlockType = new SpaceAltarShuzzleBlockType();
 
 class SpaceAltarShuzzleBlock extends TempleFieldBase {
+    sceneRoot: THREE.Group;
     mesh: THREE.Mesh;
     matDefault: THREE.Material;
     matCentered: THREE.Material;
@@ -21,6 +23,16 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
     gridSnapThreshold: number = 0.35;
     rotationSnapAngle: number = Math.PI / 2;
     rotationSnapThreshold: number = Math.PI / 16;
+    visualSnapDuration: number = 0.15;
+    isVisualSnapAnimating: boolean = false;
+    visualSnapStartTime: number = 0;
+    visualSnapStartPos = new THREE.Vector3();
+    visualSnapWorldPos = new THREE.Vector3();
+    visualSnapStartQuat = new THREE.Quaternion();
+    visualSnapWorldQuat = new THREE.Quaternion();
+    visualSnapRootQuat = new THREE.Quaternion();
+    visualSnapIdentityQuat = new THREE.Quaternion();
+    visualSnapZeroPos = new THREE.Vector3();
 
     constructor(
         meshData: any,
@@ -38,37 +50,68 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
         this.matCentered = new THREE.MeshToonMaterial({ color: 0xccCCcc });
         this.matHeld = new THREE.MeshToonMaterial({ color: 0x0000FF });
 
+        this.sceneRoot = new THREE.Group();
+        this.sceneRoot.name = blockName;
+        sceneParent.add(this.sceneRoot);
+
         // Create mesh from the block data
         this.mesh = this.createMeshFromData(meshData);
         this.mesh.material = this.matDefault;
         this.mesh.name = blockName;
-        
-        sceneParent.add(this.mesh);
+        this.sceneRoot.add(this.mesh);
 
         // Register the mesh as a ResourceInstance so the raycaster can find it
-        const resData = new ResourceData(shuzzleBlockType, { mesh: this.mesh }, this);
-        this.meshInstance = ResourceInstance.fromObject3D(this.mesh, resData);
+        const resData = new ResourceData(shuzzleBlockType, { mesh: this.sceneRoot }, this);
+        this.meshInstance = ResourceInstance.fromObject3D(this.sceneRoot, resData);
+        this.sceneRoot.userData.field = this;
         this.mesh.userData.field = this;
+        this.mesh.userData.resInstPtr = this.meshInstance;
         this.state_instance_latest = this.meshInstance;
         this.state_instancer = Promise.resolve(this.meshInstance);
         this.state_loaded_latest = resData;
     }
 
-    applyPositionDelta(delta: THREE.Vector3, isPush: boolean = false) {
-        this.mesh.position.add(delta);
+    applyPositionDelta(delta: THREE.Vector3, isPush: boolean = false, startTime: number) {
+        this.captureVisualWorldTransform();
+        this.sceneRoot.position.add(delta);
+        this.beginVisualSnapAnimation(startTime);
     }
 
-    applyRotationDelta(deltaQuat: THREE.Quaternion) {
-        const nextQuat = this.mesh.quaternion.clone();
+    applyRotationDelta(deltaQuat: THREE.Quaternion, startTime: number) {
+        this.captureVisualWorldTransform();
+        const nextQuat = this.sceneRoot.quaternion.clone();
         nextQuat.multiply(deltaQuat);
-        this.mesh.quaternion.copy(nextQuat);
+        this.sceneRoot.quaternion.copy(nextQuat);
+        this.beginVisualSnapAnimation(startTime);
+    }
+
+    updateVisualSnapAnimation(time: TempleTime): boolean {
+        if (!this.isVisualSnapAnimating) {
+            return false;
+        }
+
+        const elapsedTime = time.timeVirtualCurrent - this.visualSnapStartTime;
+        if (elapsedTime >= this.visualSnapDuration) {
+            this.mesh.position.copy(this.visualSnapZeroPos);
+            this.mesh.quaternion.identity();
+            this.isVisualSnapAnimating = false;
+            return false;
+        }
+
+        const t = elapsedTime / this.visualSnapDuration;
+        const smoothT = t * t * (3.0 - 2.0 * t);
+        this.mesh.position.lerpVectors(this.visualSnapStartPos, this.visualSnapZeroPos, smoothT);
+        this.mesh.quaternion.copy(this.visualSnapStartQuat);
+        this.mesh.quaternion.slerp(this.visualSnapIdentityQuat, smoothT);
+        return true;
     }
 
     snapToGrid() {
-        const snappedPos = this.snapPositionToGrid(this.mesh.position);
-        this.mesh.position.copy(snappedPos);
+        const snappedPos = this.snapPositionToGrid(this.sceneRoot.position);
+        this.sceneRoot.position.copy(snappedPos);
         const nearestY = Math.round(this.getYRotation() / this.rotationSnapAngle) * this.rotationSnapAngle;
         this.setYRotation(nearestY);
+        this.resetVisualSnapAnimation();
     }
 
     private snapPositionToGrid(position: THREE.Vector3) {
@@ -81,13 +124,38 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
 
     private getYRotation(): number {
         const euler = new THREE.Euler();
-        euler.setFromQuaternion(this.mesh.quaternion, 'YXZ');
+        euler.setFromQuaternion(this.sceneRoot.quaternion, 'YXZ');
         return euler.y;
     }
 
     private setYRotation(angle: number) {
         const euler = new THREE.Euler(0, angle, 0, 'YXZ');
-        this.mesh.quaternion.setFromEuler(euler);
+        this.sceneRoot.quaternion.setFromEuler(euler);
+    }
+
+    private captureVisualWorldTransform() {
+        this.mesh.updateWorldMatrix(true, false);
+        this.mesh.getWorldPosition(this.visualSnapWorldPos);
+        this.mesh.getWorldQuaternion(this.visualSnapWorldQuat);
+    }
+
+    private beginVisualSnapAnimation(startTime: number) {
+        this.sceneRoot.updateWorldMatrix(true, false);
+        this.visualSnapStartPos.copy(this.visualSnapWorldPos);
+        this.sceneRoot.worldToLocal(this.visualSnapStartPos);
+        this.sceneRoot.getWorldQuaternion(this.visualSnapRootQuat);
+        this.visualSnapStartQuat.copy(this.visualSnapRootQuat).invert();
+        this.visualSnapStartQuat.multiply(this.visualSnapWorldQuat);
+        this.mesh.position.copy(this.visualSnapStartPos);
+        this.mesh.quaternion.copy(this.visualSnapStartQuat);
+        this.visualSnapStartTime = startTime;
+        this.isVisualSnapAnimating = true;
+    }
+
+    private resetVisualSnapAnimation() {
+        this.mesh.position.copy(this.visualSnapZeroPos);
+        this.mesh.quaternion.identity();
+        this.isVisualSnapAnimating = false;
     }
 
     private createMeshFromData(data: any): THREE.Mesh {
@@ -132,11 +200,12 @@ class SpaceAltarShuzzleBlock extends TempleFieldBase {
     }
 
     getPosition(): THREE.Vector3 {
-        return this.mesh.position;
+        return this.sceneRoot.position;
     }
 
     setPosition(pos: THREE.Vector3): void {
-        this.mesh.position.copy(pos);
+        this.sceneRoot.position.copy(pos);
+        this.resetVisualSnapAnimation();
     }
 }
 
