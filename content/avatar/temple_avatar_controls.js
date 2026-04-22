@@ -36,7 +36,18 @@ var TempleAvatarControls = /** @class */ (function () {
         this._discreteRotationThreshold = 0.5;
         this._discreteRotationSnapAngle = Math.PI / 2; // 90 degrees
         this._accumulatedRotationMotion = 0; // Accumulates motion to trigger next rotation
-        this._rotationMotionPerSnap = 0.3; // Distance needed to trigger another snap
+        this._rotationMotionPerSnap = 0.5; // Distance needed to trigger another snap
+        // Smooth rotation animation
+        this._targetRotationForHeldObject = new THREE.Quaternion();
+        this._rotationAnimStartTime = 0;
+        this._rotationAnimDuration = 0.15; // Duration of smooth rotation snap in seconds
+        this._isRotationAnimating = false;
+        this._rotationAnimStartQuat = new THREE.Quaternion();
+        // Discrete push state (for push object)
+        this._lastPushDirection = "none";
+        this._discretePushThreshold = 0.3;
+        this._accumulatedPushMotion = 0;
+        this._pushMotionPerSnap = 0.4; // Distance needed to trigger push movement (1m increments)
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
         this.isDevMode = false;
@@ -59,7 +70,34 @@ var TempleAvatarControls = /** @class */ (function () {
             _this.onTimeStepped(time);
         });
     }
+    TempleAvatarControls.prototype.updateHeldObjectRotationAnimation = function (time) {
+        if (!this._isRotationAnimating) {
+            return;
+        }
+        var held = this.avatar.focus.heldScene();
+        if (!held) {
+            this._isRotationAnimating = false;
+            return;
+        }
+        var elapsedTime = time.timeVirtualCurrent - this._rotationAnimStartTime;
+        if (elapsedTime >= this._rotationAnimDuration) {
+            // Animation complete
+            held.quaternion.copy(this._targetRotationForHeldObject);
+            this._isRotationAnimating = false;
+        }
+        else {
+            // Interpolate between start and target
+            var t = elapsedTime / this._rotationAnimDuration;
+            var smoothT = t * t * (3.0 - 2.0 * t); // Smoothstep interpolation
+            var result = new THREE.Quaternion();
+            result.copy(this._rotationAnimStartQuat);
+            result.slerp(this._targetRotationForHeldObject, smoothT);
+            held.quaternion.copy(result);
+        }
+    };
     TempleAvatarControls.prototype.onTimeStepped = function (time) {
+        // Apply smooth rotation animation to held object
+        this.updateHeldObjectRotationAnimation(time);
         // before controllers:
         this.avatar.pose.viewFovScale = 1.0;
         // controllers:
@@ -282,17 +320,12 @@ var TempleAvatarControls = /** @class */ (function () {
         }
     };
     TempleAvatarControls.prototype.onUseControl_RotatingObject = function (control, time, isAim) {
-        var _a, _b;
+        var _a;
         if (time == null) {
             // start/stop stuff:
             if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
-                var heldScene = this.avatar.focus.heldScene();
-                var heldField = heldScene ? (_a = heldScene.userData) === null || _a === void 0 ? void 0 : _a.field : null;
-                if (control.isEnd && heldField && heldField.isGridSnappable && typeof heldField.snapToGrid === 'function') {
-                    heldField.snapToGrid();
-                }
                 var oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
                     if (oldHeld) {
@@ -363,16 +396,27 @@ var TempleAvatarControls = /** @class */ (function () {
                 // Create rotation quaternion
                 tq1.setFromAxisAngle(rotationAxis, rotationAngle);
                 if (held) {
-                    var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
+                    var heldField = (_a = held.userData) === null || _a === void 0 ? void 0 : _a.field;
                     if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
                         heldField.applyRotationDelta(tq1);
                     }
                     else {
-                        var heldQuat = this._tq1;
+                        // Compute new target rotation: start with current held quaternion and apply snap
                         var tempQuat = new THREE.Quaternion();
                         tempQuat.copy(held.quaternion);
                         tempQuat.multiply(tq1);
-                        held.quaternion.copy(tempQuat);
+                        // Start animation if not already animating
+                        if (!this._isRotationAnimating) {
+                            this._rotationAnimStartQuat.copy(held.quaternion);
+                            this._rotationAnimStartTime = this.avatar.world.time.timeVirtualCurrent;
+                            this._isRotationAnimating = true;
+                        }
+                        else {
+                            // If already animating, restart from current position for smooth continuation
+                            this._rotationAnimStartQuat.copy(held.quaternion);
+                            this._rotationAnimStartTime = this.avatar.world.time.timeVirtualCurrent;
+                        }
+                        this._targetRotationForHeldObject.copy(tempQuat);
                     }
                 }
             }
@@ -409,25 +453,23 @@ var TempleAvatarControls = /** @class */ (function () {
         outputQuat.setFromAxisAngle(axis, angle);
     };
     TempleAvatarControls.prototype.onUseControl_PushObject = function (control, time, isRun) {
-        var _a, _b;
+        var _a;
         if (time == null) {
             // start/stop stuff:
             if (control.isStart || control.isEnd) {
                 time = this.avatar.world.time;
                 time.requestRealtimeForDuration(ControlSettings.aimAnimDuration);
-                var heldScene = this.avatar.focus.heldScene();
-                var heldField_1 = heldScene ? (_a = heldScene.userData) === null || _a === void 0 ? void 0 : _a.field : null;
-                if (control.isEnd && heldField_1 && heldField_1.isGridSnappable && typeof heldField_1.snapToGrid === 'function') {
-                    heldField_1.snapToGrid();
-                }
                 var oldHeld = this.avatar.focus.held;
                 if (control.isEnd) {
                     if (oldHeld) {
                         if (control.isGestureTap) {
-                            console.log("Dropping object after tap+rotate:");
+                            console.log("Dropping object after tap+push:");
                             this.avatar.focus.ensureHeld(null);
                         }
                     }
+                    // Reset discrete push state when control ends
+                    this._lastPushDirection = "none";
+                    this._accumulatedPushMotion = 0;
                 }
             }
             return;
@@ -437,29 +479,70 @@ var TempleAvatarControls = /** @class */ (function () {
             console.log("No held scene for pushing.");
             return;
         }
-        var tv1 = this._tv1;
-        var tv2 = this._tv2;
-        var tv3 = this._tv3;
-        var tm1 = this._tm1;
-        tv1.copy(control.unitCurrent);
-        var motion = tv1.length();
-        tv1.set(tv1.x, 0, tv1.y);
-        var localToControl = this.controlSpace;
-        localToControl.localToWorld(tv1);
-        tv2.copy(tv1);
-        var baseSpeed = isRun ? ControlSettings.speedRun : ControlSettings.speedWalk;
-        tv1.multiplyScalar(baseSpeed * time.dt);
-        tv3.copy(tv1);
-        if (held.parent) {
-            tm1.extractRotation(held.parent.matrixWorld).invert();
-            tv3.applyMatrix4(tm1);
+        // Discrete push motion based on stick direction
+        var stickX = control.unitCurrent.x;
+        var stickY = control.unitCurrent.y;
+        var stickMagnitude = Math.sqrt(stickX * stickX + stickY * stickY);
+        // Determine current cardinal direction
+        var currentDirection = "none";
+        if (stickMagnitude > this._discretePushThreshold) {
+            var absX = Math.abs(stickX);
+            var absY = Math.abs(stickY);
+            if (absX > absY) {
+                currentDirection = stickX > 0 ? "right" : "left";
+            }
+            else {
+                currentDirection = stickY > 0 ? "up" : "down";
+            }
         }
-        var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
-        if (heldField && heldField.isGridSnappable && typeof heldField.applyPositionDelta === 'function') {
-            heldField.applyPositionDelta(tv3, isRun);
+        // Reset accumulation on direction change
+        if (currentDirection !== this._lastPushDirection) {
+            this._lastPushDirection = currentDirection;
+            this._accumulatedPushMotion = 0;
         }
-        else {
-            held.position.add(tv3);
+        // Accumulate motion and apply pushes as threshold is crossed
+        if (currentDirection !== "none") {
+            this._accumulatedPushMotion += stickMagnitude * time.dt;
+            // Apply push movements while accumulated motion exceeds threshold
+            while (this._accumulatedPushMotion >= this._pushMotionPerSnap) {
+                this._accumulatedPushMotion -= this._pushMotionPerSnap;
+                var tv1 = this._tv1;
+                var tv3 = this._tv3;
+                var tm1 = this._tm1;
+                // Calculate push direction based on current direction
+                tv1.set(0, 0, 0);
+                if (currentDirection === "right") {
+                    tv1.x = 1;
+                }
+                else if (currentDirection === "left") {
+                    tv1.x = -1;
+                }
+                else if (currentDirection === "up") {
+                    tv1.y = 0;
+                    tv1.z = 1;
+                }
+                else if (currentDirection === "down") {
+                    tv1.y = 0;
+                    tv1.z = -1;
+                }
+                var localToControl = this.controlSpace;
+                localToControl.localToWorld(tv1);
+                tv1.normalize();
+                // Move 1m per snap (fixed discrete increment)
+                tv1.multiplyScalar(1.0);
+                tv3.copy(tv1);
+                if (held.parent) {
+                    tm1.extractRotation(held.parent.matrixWorld).invert();
+                    tv3.applyMatrix4(tm1);
+                }
+                var heldField = (_a = held.userData) === null || _a === void 0 ? void 0 : _a.field;
+                if (heldField && heldField.isGridSnappable && typeof heldField.applyPositionDelta === 'function') {
+                    heldField.applyPositionDelta(tv3, isRun);
+                }
+                else {
+                    held.position.add(tv3);
+                }
+            }
         }
         // TODO: keep avatar looking at the object (probably gradually):
     };
