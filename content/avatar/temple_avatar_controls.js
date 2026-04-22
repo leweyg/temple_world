@@ -31,6 +31,12 @@ var TempleAvatarControls = /** @class */ (function () {
         this._tvAcross = new THREE.Vector3(1.0, 0, 0);
         this._tm1 = new THREE.Matrix4();
         this._te1 = new THREE.Euler();
+        // Discrete rotation state
+        this._lastRotationDirection = "none";
+        this._discreteRotationThreshold = 0.5;
+        this._discreteRotationSnapAngle = Math.PI / 2; // 90 degrees
+        this._accumulatedRotationMotion = 0; // Accumulates motion to trigger next rotation
+        this._rotationMotionPerSnap = 0.3; // Distance needed to trigger another snap
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
         this.isDevMode = false;
@@ -295,6 +301,9 @@ var TempleAvatarControls = /** @class */ (function () {
                             this.avatar.focus.ensureHeld(null);
                         }
                     }
+                    // Reset discrete rotation state when control ends
+                    this._lastRotationDirection = "none";
+                    this._accumulatedRotationMotion = 0;
                 }
             }
             return;
@@ -305,40 +314,67 @@ var TempleAvatarControls = /** @class */ (function () {
             return;
         }
         this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
-        var tq1 = this._tq1;
-        var prevFacing = this.avatar.pose.viewFacing;
-        var nxtFacing = this._tvFacing;
-        var lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
-        var rotateSpeed = 4.0;
-        nxtFacing.copy(prevFacing);
-        var avatarSide = this._tv1;
-        avatarSide.copy(this._tvAcross);
-        this.controlSpace.localToWorld(avatarSide);
-        var dy = control.unitCurrent.y * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateUpDown;
-        tq1.setFromAxisAngle(avatarSide, dy);
-        nxtFacing.applyQuaternion(tq1);
-        var dx = control.unitCurrent.x * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateSide;
-        tq1.setFromAxisAngle(this._tvUp, dx);
-        nxtFacing.applyQuaternion(tq1);
-        var facingY = nxtFacing.y;
-        var maxY = 0.7;
-        facingY = Math.max(-maxY, Math.min(maxY, facingY));
-        nxtFacing.setY(facingY);
-        nxtFacing.normalize();
-        var deltaQuat = this._tqFacing;
-        deltaQuat.setFromUnitVectors(prevFacing, nxtFacing);
-        var deltaQuatAxis = this._tqFlatFacing;
-        this.projectRotationOntoDominantAxis(deltaQuat, deltaQuatAxis);
-        if (held) {
-            var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
-            if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
-                heldField.applyRotationDelta(deltaQuatAxis);
+        // Discrete 90-degree rotation based on stick direction
+        var stickX = control.unitCurrent.x;
+        var stickY = control.unitCurrent.y;
+        var stickMagnitude = Math.sqrt(stickX * stickX + stickY * stickY);
+        // Determine current cardinal direction
+        var currentDirection = "none";
+        if (stickMagnitude > this._discreteRotationThreshold) {
+            var absX = Math.abs(stickX);
+            var absY = Math.abs(stickY);
+            if (absX > absY) {
+                currentDirection = stickX > 0 ? "right" : "left";
             }
             else {
-                var heldQuat = this._tq1;
-                heldQuat.copy(held.quaternion);
-                heldQuat.multiply(deltaQuatAxis);
-                held.quaternion.copy(heldQuat);
+                currentDirection = stickY > 0 ? "up" : "down";
+            }
+        }
+        // Reset accumulation on direction change
+        if (currentDirection !== this._lastRotationDirection) {
+            this._lastRotationDirection = currentDirection;
+            this._accumulatedRotationMotion = 0;
+        }
+        // Accumulate motion and apply rotations as threshold is crossed
+        if (currentDirection !== "none") {
+            this._accumulatedRotationMotion += stickMagnitude * time.dt;
+            // Apply rotations while accumulated motion exceeds threshold
+            while (this._accumulatedRotationMotion >= this._rotationMotionPerSnap) {
+                this._accumulatedRotationMotion -= this._rotationMotionPerSnap;
+                var tq1 = this._tq1;
+                var rotationAxis = this._tv1;
+                var rotationAngle = this._discreteRotationSnapAngle;
+                // Determine rotation axis based on direction
+                if (currentDirection === "left" || currentDirection === "right") {
+                    // Rotate around Y axis (up/down)
+                    rotationAxis.copy(this._tvUp);
+                    if (currentDirection === "left") {
+                        rotationAngle = -rotationAngle;
+                    }
+                }
+                else {
+                    // Rotate around X axis (side to side in world space)
+                    rotationAxis.copy(this._tvAcross);
+                    this.controlSpace.localToWorld(rotationAxis);
+                    if (currentDirection === "down") {
+                        rotationAngle = -rotationAngle;
+                    }
+                }
+                // Create rotation quaternion
+                tq1.setFromAxisAngle(rotationAxis, rotationAngle);
+                if (held) {
+                    var heldField = (_b = held.userData) === null || _b === void 0 ? void 0 : _b.field;
+                    if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
+                        heldField.applyRotationDelta(tq1);
+                    }
+                    else {
+                        var heldQuat = this._tq1;
+                        var tempQuat = new THREE.Quaternion();
+                        tempQuat.copy(held.quaternion);
+                        tempQuat.multiply(tq1);
+                        held.quaternion.copy(tempQuat);
+                    }
+                }
             }
         }
     };

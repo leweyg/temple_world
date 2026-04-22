@@ -39,6 +39,13 @@ class TempleAvatarControls {
     _tm1 = new THREE.Matrix4();
     _te1 = new THREE.Euler();
     
+    // Discrete rotation state
+    _lastRotationDirection : string = "none";
+    _discreteRotationThreshold : number = 0.5;
+    _discreteRotationSnapAngle : number = Math.PI / 2; // 90 degrees
+    _accumulatedRotationMotion : number = 0; // Accumulates motion to trigger next rotation
+    _rotationMotionPerSnap : number = 0.5; // Distance needed to trigger another snap
+    
     constructor(avatar:TempleAvatar, controlGroup:ControllerGroup) {
         this.isTempleAvatarControls = true;
         this.avatar = avatar;
@@ -321,6 +328,9 @@ class TempleAvatarControls {
                             this.avatar.focus.ensureHeld(null);
                         }
                     }
+                    // Reset discrete rotation state when control ends
+                    this._lastRotationDirection = "none";
+                    this._accumulatedRotationMotion = 0;
                 }
             }
             
@@ -333,48 +343,75 @@ class TempleAvatarControls {
             return;
         }
 
-
         this.avatar.pose.viewFovScale = isAim ? ControlSettings.aimRotatingScalar : 1.0;
 
-        const tq1 = this._tq1;
-        const prevFacing = this.avatar.pose.viewFacing;
-        const nxtFacing = this._tvFacing;
-        const lookSpeed = isAim ? ControlSettings.lookRateAimScalar : 1.0;
-        const rotateSpeed = 4.0;
-        nxtFacing.copy(prevFacing);
+        // Discrete 90-degree rotation based on stick direction
+        const stickX = control.unitCurrent.x;
+        const stickY = control.unitCurrent.y;
+        const stickMagnitude = Math.sqrt(stickX * stickX + stickY * stickY);
 
-        const avatarSide = this._tv1;
-        avatarSide.copy(this._tvAcross);
-        this.controlSpace.localToWorld(avatarSide);
-        const dy = control.unitCurrent.y * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateUpDown;
-        tq1.setFromAxisAngle(avatarSide, dy);
-        nxtFacing.applyQuaternion(tq1);
-
-        const dx = control.unitCurrent.x * time.dt * lookSpeed * rotateSpeed * -ControlSettings.lookRateSide;
-        tq1.setFromAxisAngle(this._tvUp, dx);
-        nxtFacing.applyQuaternion(tq1);
-        
-        var facingY = nxtFacing.y;
-        const maxY = 0.7;
-        facingY = Math.max(-maxY, Math.min(maxY, facingY));
-        nxtFacing.setY(facingY);
-        nxtFacing.normalize();
-
-        const deltaQuat = this._tqFacing;
-        deltaQuat.setFromUnitVectors(prevFacing, nxtFacing);
-
-        const deltaQuatAxis = this._tqFlatFacing;
-        this.projectRotationOntoDominantAxis(deltaQuat, deltaQuatAxis);
-
-        if (held) {
-            const heldField = held.userData?.field;
-            if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
-                heldField.applyRotationDelta(deltaQuatAxis);
+        // Determine current cardinal direction
+        let currentDirection = "none";
+        if (stickMagnitude > this._discreteRotationThreshold) {
+            const absX = Math.abs(stickX);
+            const absY = Math.abs(stickY);
+            
+            if (absX > absY) {
+                currentDirection = stickX > 0 ? "right" : "left";
             } else {
-                const heldQuat = this._tq1;
-                heldQuat.copy(held.quaternion);
-                heldQuat.multiply(deltaQuatAxis);
-                held.quaternion.copy(heldQuat);
+                currentDirection = stickY > 0 ? "up" : "down";
+            }
+        }
+
+        // Reset accumulation on direction change
+        if (currentDirection !== this._lastRotationDirection) {
+            this._lastRotationDirection = currentDirection;
+            this._accumulatedRotationMotion = 0;
+        }
+
+        // Accumulate motion and apply rotations as threshold is crossed
+        if (currentDirection !== "none") {
+            this._accumulatedRotationMotion += stickMagnitude * time.dt;
+            
+            // Apply rotations while accumulated motion exceeds threshold
+            while (this._accumulatedRotationMotion >= this._rotationMotionPerSnap) {
+                this._accumulatedRotationMotion -= this._rotationMotionPerSnap;
+                
+                const tq1 = this._tq1;
+                let rotationAxis = this._tv1;
+                let rotationAngle = this._discreteRotationSnapAngle;
+
+                // Determine rotation axis based on direction
+                if (currentDirection === "left" || currentDirection === "right") {
+                    // Rotate around Y axis (up/down)
+                    rotationAxis.copy(this._tvUp);
+                    if (currentDirection === "left") {
+                        rotationAngle = -rotationAngle;
+                    }
+                } else {
+                    // Rotate around X axis (side to side in world space)
+                    rotationAxis.copy(this._tvAcross);
+                    this.controlSpace.localToWorld(rotationAxis);
+                    if (currentDirection === "down") {
+                        rotationAngle = -rotationAngle;
+                    }
+                }
+
+                // Create rotation quaternion
+                tq1.setFromAxisAngle(rotationAxis, rotationAngle);
+                
+                if (held) {
+                    const heldField = held.userData?.field;
+                    if (heldField && heldField.isGridSnappable && typeof heldField.applyRotationDelta === 'function') {
+                        heldField.applyRotationDelta(tq1);
+                    } else {
+                        const heldQuat = this._tq1;
+                        const tempQuat = new THREE.Quaternion();
+                        tempQuat.copy(held.quaternion);
+                        tempQuat.multiply(tq1);
+                        held.quaternion.copy(tempQuat);
+                    }
+                }
             }
         }
     }
