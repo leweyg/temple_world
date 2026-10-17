@@ -26,6 +26,13 @@
     a {
         color:darkgreen;
     }
+    .trailer {
+        display: block;
+        width: 100%;
+        max-width: 960px;
+        height: auto;
+        margin: 1em auto;
+    }
 </style>
 
 <body style="background-color: rgb(131, 131, 131); color:black">
@@ -45,6 +52,25 @@
         <a href="https://leweyg.github.io/temple_world/" >Play : https://leweyg.github.io/temple_world/</a>
         <br/><br/>
         <a href="https://github.com/leweyg/temple_world/" >Code : https://github.com/leweyg/temple_world/</a>
+    </div>
+    <div>
+        <video id="temple-world-trailer" class="trailer" controls autoplay playsinline preload="metadata"
+            aria-label="Temple World trailer">
+            <source src="content/images/temple_world_trailer_1.mp4" type="video/mp4">
+            Your browser does not support embedded video.
+            <a href="content/images/temple_world_trailer_1.mp4">Download the trailer</a>.
+        </video>
+        <script>
+            const trailer = document.getElementById('temple-world-trailer');
+            trailer.volume = 0.5;
+            trailer.play().catch(() => {
+                // Browsers may require autoplay to be muted until the viewer enables sound.
+                trailer.muted = true;
+                trailer.play().catch(() => {
+                    // Keep the native controls available if autoplay is blocked entirely.
+                });
+            });
+        </script>
     </div>
     <div>
         <p>
