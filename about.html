@@ -65,35 +65,29 @@
         <h3>By <a href="https://lewcid.com/lg/aboutme.html">Lewey Geselowitz</a></h3>
     </div>
     <div>
-        <p>A Temple World for you to explore, built around the philosophy of 
+        <p>Enter an experience of
             <a href="https://leweyg.github.io/spirtual_objectivism/">Spiritual Objectivism</a>
-            and the 5-fold KalaCharka temple design,
-            with Zelda-Tears inspired mobile touch gameplay.</p>
-            <p>Currently just the basic controls are working (dual stick move and look, or run and aim).
-                The story and fiction are being prototyped as the 
-                <a href="https://leweyg.github.io/jclassicrpg/">Sprial Grid - Fantasy Role Playing Game</a>.
+            as a 5-fold KalaCharka temple design,
+            with Zelda inspired mobile touch gameplay.</p>
+            <p>Also see the 
+                <a href="https://leweyg.github.io/jclassicrpg/">Sprial Grid</a>
+                narrative role playing game which is exploring conversational quest mechanics,
+                while this experience is focused on interactive contemplation.
             </p>
+    </div>
+
+    <div>
+        <a href="content/images/spiritual_objectivist_temple_v0.4.jpg">
+        <img src="content/images/spiritual_objectivist_temple_v0.4.jpg" width="100%">
+        </a>
+    </div>
+    <div>
         <div class="action-links">
             <a class="action-button" href="https://leweyg.github.io/temple_world/">Play (early demo)</a>
             <a class="action-button" href="https://github.com/leweyg/temple_world/">Code</a>
         </div>
     </div>
-    <div>
-        <video id="temple-world-trailer" class="trailer" controls autoplay muted playsinline preload="metadata"
-            aria-label="Temple World trailer">
-            <source src="content/images/temple_world_trailer_1.mp4" type="video/mp4">
-            Your browser does not support embedded video.
-            <a href="content/images/temple_world_trailer_1.mp4">Download the trailer</a>.
-        </video>
-        <script>
-            const trailer = document.getElementById('temple-world-trailer');
-            trailer.volume = 0.25;
-            trailer.muted = true;
-            trailer.play().catch(() => {
-                // Keep the native controls available if autoplay is blocked.
-            });
-        </script>
-    </div>
+
     <div>
         <h5>Design</h5>
 
@@ -310,7 +304,23 @@
             </table>
         </div>
 
-        
+        <div>
+        <video id="temple-world-trailer" class="trailer" controls autoplay muted playsinline preload="metadata"
+            aria-label="Temple World trailer">
+            <source src="content/images/temple_world_trailer_1.mp4" type="video/mp4">
+            Your browser does not support embedded video.
+            <a href="content/images/temple_world_trailer_1.mp4">Download the trailer</a>.
+        </video>
+        <script>
+            const trailer = document.getElementById('temple-world-trailer');
+            trailer.volume = 0.25;
+            trailer.muted = true;
+            trailer.play().catch(() => {
+                // Keep the native controls available if autoplay is blocked.
+            });
+        </script>
+    </div>
+
         <div class="longdiv">
             <h5>Systems</h5>
             <ul>
