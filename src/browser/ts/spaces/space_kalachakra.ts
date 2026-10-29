@@ -14,6 +14,9 @@ const TEMPLE_BASE_ELEVATION = 0.2;
 const TEMPLE_THICKNESS = 2 * 0.3048;
 // Wall depth toward the center, independent of its perpendicular thickness.
 const TEMPLE_CORNER_DEPTH_FRACTION = 3 / 16;
+// Metres per full texture repeat, and adjustable normal-map relief strength.
+const TEMPLE_NORMAL_TILE_SIZE = 1;
+const TEMPLE_NORMAL_STRENGTH = 1;
 
 // Floors are numbered from the entrance (1), evenly spaced in height.
 // Leave one equal interval above floor 5 for the logical, undrawn roof tip.
@@ -40,8 +43,13 @@ class TempleSpaceKalaChakra {
 
         const topFloor = floors[floors.length - 1];
         const fourthFloor = floors[3];
+        const normalMap = new THREE.TextureLoader().load('content/images/double_dorje_tiled_normals.jpg');
+        normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+        normalMap.colorSpace = THREE.NoColorSpace;
         const material = new THREE.MeshStandardMaterial({
             color: 0x99bb99, roughness: 0.85, side: THREE.DoubleSide,
+            normalMap,
+            normalScale: new THREE.Vector2(TEMPLE_NORMAL_STRENGTH, TEMPLE_NORMAL_STRENGTH),
         });
         const baseRadius = TEMPLE_BASE_WIDTH / 2;
         const slope = baseRadius / TEMPLE_HEIGHT;
@@ -133,6 +141,27 @@ class TempleSpaceKalaChakra {
     addSolid(vertices: number[], material: THREE.Material, points: THREE.Vector3[], name: string) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        // Each quad is two consecutive triangles. Project onto its own plane
+        // with orthonormal axes so bevels and tapered walls retain tile scale.
+        const uvs: number[] = [];
+        const up = new THREE.Vector3(0, 1, 0);
+        for (let offset = 0; offset < vertices.length; offset += 18) {
+            const a = new THREE.Vector3().fromArray(vertices, offset);
+            const b = new THREE.Vector3().fromArray(vertices, offset + 3);
+            const c = new THREE.Vector3().fromArray(vertices, offset + 6);
+            const normal = b.sub(a).cross(c.sub(a)).normalize();
+            const horizontal = Math.abs(normal.y) > 0.999;
+            const u = horizontal ? new THREE.Vector3(1, 0, 0)
+                : new THREE.Vector3().crossVectors(up, normal).normalize();
+            const v = horizontal ? new THREE.Vector3(0, 0, 1)
+                : new THREE.Vector3().crossVectors(normal, u).normalize();
+            for (let i = 0; i < 18; i += 3) {
+                const point = new THREE.Vector3().fromArray(vertices, offset + i);
+                uvs.push(point.dot(u) / TEMPLE_NORMAL_TILE_SIZE,
+                    point.dot(v) / TEMPLE_NORMAL_TILE_SIZE);
+            }
+        }
+        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         geometry.computeVertexNormals();
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = name;
