@@ -9,12 +9,10 @@ const TEMPLE_SCALE = 0.15; // GOLDEN_RATIO_INVERSE  * GOLDEN_RATIO_INVERSE * GOL
 const TEMPLE_BASE_WIDTH = 230.3 * TEMPLE_SCALE;
 const TEMPLE_HEIGHT = 146.6 * TEMPLE_SCALE;
 const TEMPLE_BASE_ELEVATION = 0.2;
-const R = GOLDEN_RATIO_INVERSE;
 
-// Floors are numbered from the entrance (1). Floor 3 is at 61.8% of
-// the base-to-tip height; floor 2 is 61.8% of that. Above floor 3,
-// subdivide the remaining height by the same ratio, leaving a pointed roof.
-const TEMPLE_FLOOR_FRACTIONS = [0, R * R, R, 1 - R ** 3, 1 - R ** 4];
+// Floors are numbered from the entrance (1), evenly spaced in height.
+// Leave one equal interval above floor 5 for the pointed roof.
+const TEMPLE_FLOOR_FRACTIONS = [0, 0.2, 0.4, 0.6, 0.8];
 
 class TempleSpaceKalaChakra {
     parentScene: THREE.Object3D;

@@ -3,7 +3,6 @@ import { TempleSpaceDirectionsBuilder } from './space_directions.js';
 import { TempleLights } from './space_lights.js';
 import { TempleSpaceMapBuilder } from './space_map.js';
 import { TempleSpaceKalaChakra } from './space_kalachakra.js';
-import { TempleSpaceCodaChakra } from './space_codachakra.js';
 import { ResourceTree } from '../code/resource_tree.js';
 import { SpaceTrainingBoxes } from './space_training_boxes.js';
 import { SpaceEastAltar0 } from './east/altars/space_east_altar_0.js';
@@ -25,9 +24,6 @@ var TempleSpace = /** @class */ (function () {
         this.registerLevelByCallback("KalaChakra", function (k) {
             new TempleSpaceKalaChakra(k);
         }, true);
-        this.registerLevelByCallback("CodaChakra", function (k) {
-            new TempleSpaceCodaChakra(k);
-        }); // Keep the legacy overlapping sketch available only via the dev menu.
         this.registerLevelByCallback("TrainingBoxes", function (k) {
             new SpaceTrainingBoxes(k, _this_1.resources);
         }, true);
