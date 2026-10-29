@@ -8,6 +8,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 import * as THREE from 'three';
+import { ResourceTree } from '../code/resource_tree.js';
 // Original Great Pyramid dimensions, in world units (approximately metres).
 // https://www.usna.edu/Users/math/meh/_files/documents/pyr.pdf
 var GOLDEN_RATIO_INVERSE = (Math.sqrt(5) - 1) / 2;
@@ -44,7 +45,7 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
         }); });
         var topFloor = floors[floors.length - 1];
         var fourthFloor = floors[3];
-        var normalMap = new THREE.TextureLoader().load('content/images/double_dorje_tiled_normals.jpg');
+        var normalMap = new THREE.TextureLoader().load('content/images/double_dorje_tiled_normals.jpg', function () { return ResourceTree.RequestUpdate(); });
         normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
         normalMap.colorSpace = THREE.NoColorSpace;
         var material = new THREE.MeshStandardMaterial({

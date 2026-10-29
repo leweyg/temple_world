@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ResourceTree } from '../code/resource_tree.js';
 
 // Original Great Pyramid dimensions, in world units (approximately metres).
 // https://www.usna.edu/Users/math/meh/_files/documents/pyr.pdf
@@ -43,7 +44,10 @@ class TempleSpaceKalaChakra {
 
         const topFloor = floors[floors.length - 1];
         const fourthFloor = floors[3];
-        const normalMap = new THREE.TextureLoader().load('content/images/double_dorje_tiled_normals.jpg');
+        const normalMap = new THREE.TextureLoader().load(
+            'content/images/double_dorje_tiled_normals.jpg',
+            () => ResourceTree.RequestUpdate(),
+        );
         normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
         normalMap.colorSpace = THREE.NoColorSpace;
         const material = new THREE.MeshStandardMaterial({
