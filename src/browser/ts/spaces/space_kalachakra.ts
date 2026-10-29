@@ -34,9 +34,10 @@ class TempleSpaceKalaChakra {
         }));
 
         const topFloor = floors[floors.length - 1];
+        const fourthFloor = floors[3];
         floors.forEach((floor, index) => {
-            // Retain floor 5 for openings and edge endpoints, but hide its outline.
-            if (floor !== topFloor) {
+            // Keep floor 4 logically, but hide its outline. Floor 5 is outline only.
+            if (floor !== fourthFloor) {
                 this.addSquareLines(points, floor.radius, floor.height);
             }
             // Floor 2's opening projects floor 5. Floor 3's opening is halfway
@@ -48,12 +49,12 @@ class TempleSpaceKalaChakra {
             }
         });
 
-        // Keep the sloping edges up to floor 5; omit their extensions to the tip.
+        // Keep the sloping edges up to floor 4; draw no edges above it.
         for (const x of [-1, 1]) {
             for (const z of [-1, 1]) {
                 points.push(new THREE.Vector3(x * floors[0].radius, floors[0].height,
                     z * floors[0].radius), new THREE.Vector3(
-                        x * topFloor.radius, topFloor.height, z * topFloor.radius));
+                        x * fourthFloor.radius, fourthFloor.height, z * fourthFloor.radius));
             }
         }
 
