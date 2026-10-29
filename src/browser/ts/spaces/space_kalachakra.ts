@@ -11,7 +11,7 @@ const TEMPLE_HEIGHT = 146.6 * TEMPLE_SCALE;
 const TEMPLE_BASE_ELEVATION = 0.2;
 
 // Floors are numbered from the entrance (1), evenly spaced in height.
-// Leave one equal interval above floor 5 for the pointed roof.
+// Leave one equal interval above floor 5 for the logical, undrawn roof tip.
 const TEMPLE_FLOOR_FRACTIONS = [0, 0.2, 0.4, 0.6, 0.8];
 
 class TempleSpaceKalaChakra {
@@ -33,22 +33,27 @@ class TempleSpaceKalaChakra {
             radius: TEMPLE_BASE_WIDTH * (1 - fraction) / 2,
         }));
 
+        const topFloor = floors[floors.length - 1];
         floors.forEach((floor, index) => {
-            this.addSquareLines(points, floor.radius, floor.height);
-            // Floor 1 is an uninterrupted flat outline. Only floors 2 and 3
-            // have openings: vertical projections of floors 5 and 4 respectively.
-            const openingFloor = index === 1 ? floors[4] : index === 2 ? floors[3] : undefined;
-            if (openingFloor) {
-                this.addSquareLines(points, openingFloor.radius, floor.height);
+            // Retain floor 5 for openings and edge endpoints, but hide its outline.
+            if (floor !== topFloor) {
+                this.addSquareLines(points, floor.radius, floor.height);
+            }
+            // Floor 2's opening projects floor 5. Floor 3's opening is halfway
+            // between that projection and floor 4's outline in radius.
+            const openingRadius = index === 1 ? topFloor.radius
+                : index === 2 ? (floors[3].radius + topFloor.radius) / 2 : undefined;
+            if (openingRadius !== undefined) {
+                this.addSquareLines(points, openingRadius, floor.height);
             }
         });
 
-        // Four straight hip edges establish the Giza silhouette and its tip.
-        const apex = new THREE.Vector3(0, TEMPLE_BASE_ELEVATION + TEMPLE_HEIGHT, 0);
+        // Keep the sloping edges up to floor 5; omit their extensions to the tip.
         for (const x of [-1, 1]) {
             for (const z of [-1, 1]) {
                 points.push(new THREE.Vector3(x * floors[0].radius, floors[0].height,
-                    z * floors[0].radius), apex.clone());
+                    z * floors[0].radius), new THREE.Vector3(
+                        x * topFloor.radius, topFloor.height, z * topFloor.radius));
             }
         }
 

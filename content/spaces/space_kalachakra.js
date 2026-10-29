@@ -9,7 +9,7 @@ var TEMPLE_BASE_WIDTH = 230.3 * TEMPLE_SCALE;
 var TEMPLE_HEIGHT = 146.6 * TEMPLE_SCALE;
 var TEMPLE_BASE_ELEVATION = 0.2;
 // Floors are numbered from the entrance (1), evenly spaced in height.
-// Leave one equal interval above floor 5 for the pointed roof.
+// Leave one equal interval above floor 5 for the logical, undrawn roof tip.
 var TEMPLE_FLOOR_FRACTIONS = [0, 0.2, 0.4, 0.6, 0.8];
 var TempleSpaceKalaChakra = /** @class */ (function () {
     function TempleSpaceKalaChakra(parentScene) {
@@ -25,22 +25,26 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
             height: TEMPLE_BASE_ELEVATION + fraction * TEMPLE_HEIGHT,
             radius: TEMPLE_BASE_WIDTH * (1 - fraction) / 2,
         }); });
+        var topFloor = floors[floors.length - 1];
         floors.forEach(function (floor, index) {
-            _this.addSquareLines(points, floor.radius, floor.height);
-            // Floor 1 is an uninterrupted flat outline. Only floors 2 and 3
-            // have openings: vertical projections of floors 5 and 4 respectively.
-            var openingFloor = index === 1 ? floors[4] : index === 2 ? floors[3] : undefined;
-            if (openingFloor) {
-                _this.addSquareLines(points, openingFloor.radius, floor.height);
+            // Retain floor 5 for openings and edge endpoints, but hide its outline.
+            if (floor !== topFloor) {
+                _this.addSquareLines(points, floor.radius, floor.height);
+            }
+            // Floor 2's opening projects floor 5. Floor 3's opening is halfway
+            // between that projection and floor 4's outline in radius.
+            var openingRadius = index === 1 ? topFloor.radius
+                : index === 2 ? (floors[3].radius + topFloor.radius) / 2 : undefined;
+            if (openingRadius !== undefined) {
+                _this.addSquareLines(points, openingRadius, floor.height);
             }
         });
-        // Four straight hip edges establish the Giza silhouette and its tip.
-        var apex = new THREE.Vector3(0, TEMPLE_BASE_ELEVATION + TEMPLE_HEIGHT, 0);
+        // Keep the sloping edges up to floor 5; omit their extensions to the tip.
         for (var _i = 0, _a = [-1, 1]; _i < _a.length; _i++) {
             var x = _a[_i];
             for (var _b = 0, _c = [-1, 1]; _b < _c.length; _b++) {
                 var z = _c[_b];
-                points.push(new THREE.Vector3(x * floors[0].radius, floors[0].height, z * floors[0].radius), apex.clone());
+                points.push(new THREE.Vector3(x * floors[0].radius, floors[0].height, z * floors[0].radius), new THREE.Vector3(x * topFloor.radius, topFloor.height, z * topFloor.radius));
             }
         }
         var geometry = new THREE.BufferGeometry().setFromPoints(points);
