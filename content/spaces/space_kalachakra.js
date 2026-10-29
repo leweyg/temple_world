@@ -20,6 +20,8 @@ var TEMPLE_BASE_ELEVATION = 0.2;
 // Shared floor/corner thickness at the base, in metres (2 feet).
 // Both taper proportionally with the pyramid's width at each height.
 var TEMPLE_THICKNESS = 2 * 0.3048;
+// Wall depth toward the center, independent of its perpendicular thickness.
+var TEMPLE_CORNER_DEPTH_FRACTION = 3 / 16;
 // Floors are numbered from the entrance (1), evenly spaced in height.
 // Leave one equal interval above floor 5 for the logical, undrawn roof tip.
 var TEMPLE_FLOOR_FRACTIONS = [0, 0.2, 0.4, 0.6, 0.8];
@@ -72,16 +74,20 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
             }
             _this.addSolid(vertices, material, points, "Floor ".concat(index + 1));
         });
-        // Four inward-extending corner supports follow the pyramid edges,
+        // Four diagonal supporting walls follow the pyramid edges,
         // tapering with the same thickness rule as the floors. Stop at floor 4.
         var cornerRing = function (height, x, z) {
             var radius = baseRadius - (height - TEMPLE_BASE_ELEVATION) * slope;
-            var inner = radius - TEMPLE_THICKNESS * radius / baseRadius;
+            var thickness = TEMPLE_THICKNESS * radius / baseRadius;
+            var halfOffset = thickness / (2 * Math.SQRT2);
+            // Offset the outer center inward so the wall stays inside the pyramid.
+            var outer = radius - halfOffset;
+            var inner = outer - radius * TEMPLE_CORNER_DEPTH_FRACTION;
             return [
-                new THREE.Vector3(x * radius, height, z * radius),
-                new THREE.Vector3(x * inner, height, z * radius),
-                new THREE.Vector3(x * inner, height, z * inner),
-                new THREE.Vector3(x * radius, height, z * inner),
+                new THREE.Vector3(x * (outer + halfOffset), height, z * (outer - halfOffset)),
+                new THREE.Vector3(x * (outer - halfOffset), height, z * (outer + halfOffset)),
+                new THREE.Vector3(x * (inner - halfOffset), height, z * (inner + halfOffset)),
+                new THREE.Vector3(x * (inner + halfOffset), height, z * (inner - halfOffset)),
             ];
         };
         for (var _i = 0, _a = [-1, 1]; _i < _a.length; _i++) {
