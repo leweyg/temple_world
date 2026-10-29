@@ -9,6 +9,9 @@ const TEMPLE_SCALE = 0.15; // GOLDEN_RATIO_INVERSE  * GOLDEN_RATIO_INVERSE * GOL
 const TEMPLE_BASE_WIDTH = 230.3 * TEMPLE_SCALE;
 const TEMPLE_HEIGHT = 146.6 * TEMPLE_SCALE;
 const TEMPLE_BASE_ELEVATION = 0.2;
+// Shared floor/corner thickness at the base, in metres (2 feet).
+// Both taper proportionally with the pyramid's width at each height.
+const TEMPLE_THICKNESS = 2 * 0.3048;
 
 // Floors are numbered from the entrance (1), evenly spaced in height.
 // Leave one equal interval above floor 5 for the logical, undrawn roof tip.
@@ -35,47 +38,105 @@ class TempleSpaceKalaChakra {
 
         const topFloor = floors[floors.length - 1];
         const fourthFloor = floors[3];
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x99bb99, roughness: 0.85, side: THREE.DoubleSide,
+        });
+        const baseRadius = TEMPLE_BASE_WIDTH / 2;
+        const slope = baseRadius / TEMPLE_HEIGHT;
         floors.forEach((floor, index) => {
-            // Keep floor 4 logically, but hide its outline. Floor 5 is outline only.
-            if (floor !== fourthFloor) {
-                this.addSquareLines(points, floor.radius, floor.height);
-            }
-            // Floor 2's opening projects floor 5. Floor 3's opening is halfway
-            // between that projection and floor 4's outline in radius.
+            // Floor 4 remains logical only. Floor 5 is an isolated slab.
+            if (floor === fourthFloor) return;
             const openingRadius = index === 1 ? topFloor.radius
-                : index === 2 ? (floors[3].radius + topFloor.radius) / 2 : undefined;
+                : index === 2 ? (fourthFloor.radius + topFloor.radius) / 2 : undefined;
+            const thickness = TEMPLE_THICKNESS * floor.radius / baseRadius;
+            const bottomHeight = floor.height - thickness;
+            // Slabs extend downward, preserving the existing floor elevations.
+            // Their outer bevel lies exactly on the pyramid's sloping envelope.
+            const top = this.squareCorners(floor.radius, floor.height);
+            const bottom = this.squareCorners(floor.radius + thickness * slope, bottomHeight);
+            const vertices: number[] = [];
+            this.joinRings(vertices, bottom, top);
             if (openingRadius !== undefined) {
-                this.addSquareLines(points, openingRadius, floor.height);
+                // Keep the existing openings clear through the full slab depth.
+                const innerTop = this.squareCorners(openingRadius, floor.height);
+                const innerBottom = this.squareCorners(openingRadius, bottomHeight);
+                this.joinRings(vertices, innerTop, innerBottom);
+                this.joinRings(vertices, top, innerTop);
+                this.joinRings(vertices, innerBottom, bottom);
+            } else {
+                this.addQuad(vertices, ...top);
+                this.addQuad(vertices, ...bottom);
             }
+            this.addSolid(vertices, material, points, `Floor ${index + 1}`);
         });
 
-        // Keep the sloping edges up to floor 4; draw no edges above it.
+        // Four inward-extending corner supports follow the pyramid edges,
+        // tapering with the same thickness rule as the floors. Stop at floor 4.
+        const cornerRing = (height: number, x: number, z: number) => {
+            const radius = baseRadius - (height - TEMPLE_BASE_ELEVATION) * slope;
+            const inner = radius - TEMPLE_THICKNESS * radius / baseRadius;
+            return [
+                new THREE.Vector3(x * radius, height, z * radius),
+                new THREE.Vector3(x * inner, height, z * radius),
+                new THREE.Vector3(x * inner, height, z * inner),
+                new THREE.Vector3(x * radius, height, z * inner),
+            ] as [THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3];
+        };
         for (const x of [-1, 1]) {
             for (const z of [-1, 1]) {
-                points.push(new THREE.Vector3(x * floors[0].radius, floors[0].height,
-                    z * floors[0].radius), new THREE.Vector3(
-                        x * fourthFloor.radius, fourthFloor.height, z * fourthFloor.radius));
+                const bottom = cornerRing(floors[0].height - TEMPLE_THICKNESS, x, z);
+                const top = cornerRing(fourthFloor.height, x, z);
+                const vertices: number[] = [];
+                this.joinRings(vertices, bottom, top);
+                this.addQuad(vertices, ...bottom);
+                this.addQuad(vertices, ...top);
+                this.addSolid(vertices, material, points, `Corner ${x}, ${z}`);
             }
         }
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const material = new THREE.LineBasicMaterial({ color: 0xccFFcc });
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xccFFcc });
         // Independent segments avoid spurious lines across floors and openings.
-        this.lines = new THREE.LineSegments(geometry, material);
+        this.lines = new THREE.LineSegments(geometry, lineMaterial);
         this.lines.name = "Temple floors, openings and pyramid edges";
         this.scene.add(this.lines);
     }
 
-    addSquareLines(points: THREE.Vector3[], radius: number, height: number) {
-        const corners = [
+    squareCorners(radius: number, height: number): [THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3] {
+        return [
             new THREE.Vector3(-radius, height, -radius),
             new THREE.Vector3(radius, height, -radius),
             new THREE.Vector3(radius, height, radius),
             new THREE.Vector3(-radius, height, radius),
         ];
-        for (let i = 0; i < corners.length; i++) {
-            points.push(corners[i], corners[(i + 1) % corners.length]);
+    }
+
+    addQuad(vertices: number[], a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, d: THREE.Vector3) {
+        for (const point of [a, b, c, a, c, d]) {
+            vertices.push(point.x, point.y, point.z);
         }
+    }
+
+    joinRings(vertices: number[], a: THREE.Vector3[], b: THREE.Vector3[]) {
+        for (let i = 0; i < 4; i++) {
+            const next = (i + 1) % 4;
+            this.addQuad(vertices, a[i], a[next], b[next], b[i]);
+        }
+    }
+
+    addSolid(vertices: number[], material: THREE.Material, points: THREE.Vector3[], name: string) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.computeVertexNormals();
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = name;
+        this.scene.add(mesh);
+        const edges = new THREE.EdgesGeometry(geometry);
+        const positions = edges.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) {
+            points.push(new THREE.Vector3().fromBufferAttribute(positions, i));
+        }
+        edges.dispose();
     }
 }
 
