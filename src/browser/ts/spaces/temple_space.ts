@@ -37,7 +37,7 @@ class TempleSpace {
         }, true);
         this.registerLevelByCallback("CodaChakra", k => {
             new TempleSpaceCodaChakra(k);
-        }, true);
+        }); // Keep the legacy overlapping sketch available only via the dev menu.
         this.registerLevelByCallback("TrainingBoxes", k => {
             new SpaceTrainingBoxes(k, this.resources);
         }, true);

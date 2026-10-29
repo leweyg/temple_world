@@ -27,7 +27,7 @@ var TempleSpace = /** @class */ (function () {
         }, true);
         this.registerLevelByCallback("CodaChakra", function (k) {
             new TempleSpaceCodaChakra(k);
-        }, true);
+        }); // Keep the legacy overlapping sketch available only via the dev menu.
         this.registerLevelByCallback("TrainingBoxes", function (k) {
             new SpaceTrainingBoxes(k, _this_1.resources);
         }, true);
