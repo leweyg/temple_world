@@ -32,6 +32,14 @@ var TEMPLE_FLOOR_FRACTIONS = [0, 0.2, 0.4, 0.6, 0.8];
 var TempleSpaceKalaChakra = /** @class */ (function () {
     function TempleSpaceKalaChakra(parentScene) {
         var _this = this;
+        // Share one inexpensive material across all depth-prepass meshes.
+        this.depthMaterial = new THREE.MeshDepthMaterial({
+            colorWrite: false,
+            depthWrite: true,
+            depthTest: true,
+            depthFunc: THREE.LessEqualDepth,
+            side: THREE.DoubleSide,
+        });
         this.parentScene = parentScene;
         this.scene = new THREE.Group();
         this.scene.name = "TempleSpaceKalaChakra";
@@ -52,6 +60,8 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
             color: 0x99bb99, roughness: 0.85, side: THREE.DoubleSide,
             normalMap: normalMap,
             normalScale: new THREE.Vector2(TEMPLE_NORMAL_STRENGTH, TEMPLE_NORMAL_STRENGTH),
+            depthFunc: THREE.EqualDepth,
+            depthWrite: false,
         });
         var baseRadius = TEMPLE_BASE_WIDTH / 2;
         var slope = baseRadius / TEMPLE_HEIGHT;
@@ -113,10 +123,12 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
             }
         }
         var geometry = new THREE.BufferGeometry().setFromPoints(points);
-        var lineMaterial = new THREE.LineBasicMaterial({ color: 0xccFFcc });
+        var lineMaterial = new THREE.LineBasicMaterial({ color: 0xccFFcc, depthWrite: false });
         // Independent segments avoid spurious lines across floors and openings.
         this.lines = new THREE.LineSegments(geometry, lineMaterial);
         this.lines.name = "Temple floors, openings and pyramid edges";
+        // Lines use their usual depth test after opaque surfaces have rendered.
+        this.lines.renderOrder = 1;
         this.scene.add(this.lines);
     }
     TempleSpaceKalaChakra.prototype.squareCorners = function (radius, height) {
@@ -165,6 +177,13 @@ var TempleSpaceKalaChakra = /** @class */ (function () {
         geometry.computeVertexNormals();
         var mesh = new THREE.Mesh(geometry, material);
         mesh.name = name;
+        // Finish depth for every temple solid before shading any of them.
+        // Shared geometry/transforms keep both passes' depth values identical.
+        var depthMesh = new THREE.Mesh(geometry, this.depthMaterial);
+        depthMesh.name = "".concat(name, " depth prepass");
+        depthMesh.renderOrder = -2;
+        mesh.renderOrder = -1;
+        mesh.add(depthMesh);
         this.scene.add(mesh);
         var edges = new THREE.EdgesGeometry(geometry);
         var positions = edges.getAttribute('position');

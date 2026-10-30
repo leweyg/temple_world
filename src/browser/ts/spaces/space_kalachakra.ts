@@ -27,6 +27,14 @@ class TempleSpaceKalaChakra {
     parentScene: THREE.Object3D;
     scene: THREE.Object3D;
     lines: THREE.LineSegments;
+    // Share one inexpensive material across all depth-prepass meshes.
+    depthMaterial = new THREE.MeshDepthMaterial({
+        colorWrite: false,
+        depthWrite: true,
+        depthTest: true,
+        depthFunc: THREE.LessEqualDepth,
+        side: THREE.DoubleSide,
+    });
 
     constructor(parentScene: THREE.Object3D) {
         this.parentScene = parentScene;
@@ -54,6 +62,8 @@ class TempleSpaceKalaChakra {
             color: 0x99bb99, roughness: 0.85, side: THREE.DoubleSide,
             normalMap,
             normalScale: new THREE.Vector2(TEMPLE_NORMAL_STRENGTH, TEMPLE_NORMAL_STRENGTH),
+            depthFunc: THREE.EqualDepth,
+            depthWrite: false,
         });
         const baseRadius = TEMPLE_BASE_WIDTH / 2;
         const slope = baseRadius / TEMPLE_HEIGHT;
@@ -113,10 +123,12 @@ class TempleSpaceKalaChakra {
         }
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xccFFcc });
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xccFFcc, depthWrite: false });
         // Independent segments avoid spurious lines across floors and openings.
         this.lines = new THREE.LineSegments(geometry, lineMaterial);
         this.lines.name = "Temple floors, openings and pyramid edges";
+        // Lines use their usual depth test after opaque surfaces have rendered.
+        this.lines.renderOrder = 1;
         this.scene.add(this.lines);
     }
 
@@ -169,6 +181,13 @@ class TempleSpaceKalaChakra {
         geometry.computeVertexNormals();
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = name;
+        // Finish depth for every temple solid before shading any of them.
+        // Shared geometry/transforms keep both passes' depth values identical.
+        const depthMesh = new THREE.Mesh(geometry, this.depthMaterial);
+        depthMesh.name = `${name} depth prepass`;
+        depthMesh.renderOrder = -2;
+        mesh.renderOrder = -1;
+        mesh.add(depthMesh);
         this.scene.add(mesh);
         const edges = new THREE.EdgesGeometry(geometry);
         const positions = edges.getAttribute('position');
